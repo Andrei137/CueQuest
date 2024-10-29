@@ -1,129 +1,205 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glew.h> 
 #include <GL/freeglut.h>
 #include "loadShaders.h"
+#include "SOIL.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
-// Identificatori OpenGL
+/* Variables Section */
 GLuint
-    VaoId,
-    VboId,
-    ColorBufferId,
-    ProgramId,
-    codColLocation;
-GLfloat winWidth{ 750 }, winHeight{ 750 };
-int codCol;     
+    // Board
+    BoardVaoId, 
+    BoardVboId, 
+    BoardEboId,
+    BoardProgramId,
+    BoardMatrixLocation,
+    BoardTextureLocation,
+    BoardTexture,
 
-void CreateVBO(void)
+    // Mouse
+    MouseProgramId,
+    MouseColorLocation,
+    MousePositionLocation,
+    MouseMatrixLocation;
+GLfloat 
+    winWidth{ 1280 }, 
+    winHeight{ 720 };
+glm::vec2 
+    mousePos;
+glm::vec3
+    red{ 1.0f, 0.0f, 0.0f },
+    yellow{ 1.0f, 1.0f, 0.0f };
+glm::mat4 
+    myMatrix, 
+    resizeMatrix;
+bool 
+    mousePressed{ false };
+float 
+    xMin{ -700.f },
+    xMax{ 700.f }, 
+    yMin{ -350.f }, 
+    yMax{ 350.f };
+
+/* Initialization Section */
+void LoadTexture(const char* photoPath, GLuint& texture)
 {
-    // Varfuri
-    GLfloat Vertices[] = {
-        -0.8f, -0.8f, 0.0f, 1.0f,
-         0.0f,  0.8f, 0.0f, 1.0f,
-         0.8f, -0.8f, 0.0f, 1.0f
-    };
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-    // Culori
-    GLfloat Colors[] = {
-        1.0f, 0.0f, 0.0f, 1.0f,
-        0.0f, 1.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f, 1.0f
-    };
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    // Creare VAO
-    glGenVertexArrays(1, &VaoId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    // Generare VAO si indexare catre VaoId
-    glBindVertexArray(VaoId);
+    int width{}, height{};
+    unsigned char* image{ SOIL_load_image(photoPath, &width, &height, 0, SOIL_LOAD_RGB) };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Creare buffer pentru varfuri
-    glGenBuffers(1, &VboId);
-
-    // Generare buffer si indexare catre VboId
-    glBindBuffer(GL_ARRAY_BUFFER, VboId);
-
-    // Setarea tipului de buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-    // Se asociaza atributul pentru shader (0 = coordonate)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Creare buffer pentru culoare
-    glGenBuffers(1, &ColorBufferId);
-
-    // Generare buffer si indexare catre ColorBufferId
-    glBindBuffer(GL_ARRAY_BUFFER, ColorBufferId);
-
-    // Setarea tipului de buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Colors), Colors, GL_STATIC_DRAW);
-
-    // Se asociaza atributul pentru shader (1 = culoare)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    SOIL_free_image_data(image);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void DestroyVBO(void)
+void CreateBoardVBO(void)
 {
-    // Eliberarea atributelor din shadere
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(0);
+    static const GLfloat Vertices[] =
+    {
+        -700.0f, -350.0f,  0.0f,  1.0f,   0.0f, 0.0f,
+        700.0f, -350.0f,  0.0f,  1.0f,   1.0f, 0.0f,
+        700.0f,  350.0f,  0.0f,  1.0f,   1.0f, 1.0f,
+        -700.0f,  350.0f,  0.0f,  1.0f,   0.0f, 1.0f,
+    };
 
-    // Stergerea bufferelor pentru varfuri si culori
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &ColorBufferId);
-    glDeleteBuffers(1, &VboId);
+    static const GLuint Indices[] =
+    {
+        0, 1, 2, 3
+    };
 
-    // Eliberarea obiectelor de tip VAO
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &VaoId);
+    glGenVertexArrays(1, &BoardVaoId);
+    glBindVertexArray(BoardVaoId);
+
+    glGenBuffers(1, &BoardVboId);
+    glBindBuffer(GL_ARRAY_BUFFER, BoardVboId);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &BoardEboId);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BoardEboId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+
+    // 0 = Position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    
+    // 1 = Texture
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(GLfloat)));
 }
 
 void CreateShaders(void)
 {
-    // Creare si compilarea obiectelor de tip shader
-    // Vertex shader (.vert) afecteaza geometria scenei
-    // Fragment shader (.frag) afecteaza culoarea pixelilor
-    ProgramId = LoadShaders("shaders/example.vert", "shaders/example.frag");
-    glUseProgram(ProgramId);
-}
+    // The vertex shader (.vert) affects the geonetry of the scene
+    // The fragment shader (.frag) affects the color of the pixels
 
-void DestroyShaders(void)
-{
-    // Eliminarea obiectelor de tip shader
-    glDeleteProgram(ProgramId);
+    BoardProgramId = LoadShaders("shaders/board_shader.vert", "shaders/board_shader.frag");
+    MouseProgramId = LoadShaders("shaders/mouse_shader.vert", "shaders/mouse_shader.frag");
 }
 
 void Initialize(void)
 {
-    // Culoarea de fond a ecranului
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-    CreateVBO();
+    LoadTexture("textures/table.png", BoardTexture);
+
+    CreateBoardVBO();
     CreateShaders();
 
-    // Variabila uniforma pentru a "comunica" cu shaderele
-    codColLocation = glGetUniformLocation(ProgramId, "codColShader");
+    BoardMatrixLocation = glGetUniformLocation(BoardProgramId, "myMatrix");
+    BoardTextureLocation = glGetUniformLocation(BoardProgramId, "myTexture");
+    MouseColorLocation = glGetUniformLocation(MouseProgramId, "mouseColor");
+    MousePositionLocation = glGetUniformLocation(MouseProgramId, "mousePosition");
+    MouseMatrixLocation = glGetUniformLocation(MouseProgramId, "myMatrix");
+
+    resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
 }
 
+/* Render Section */
 void RenderFunction(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    codCol = 0;
-    glUniform1i(codColLocation, codCol);
-    glLineWidth(5.0);
-    glDrawArrays(GL_LINE_LOOP, 0, 3);
+    myMatrix = resizeMatrix;
 
-    codCol = 1;
-    glUniform1i(codColLocation, codCol);
-    glEnable(GL_POINT_SMOOTH);
-    glPointSize(20.0);
-    glDrawArrays(GL_POINTS, 0, 3);
-    glDisable(GL_POINT_SMOOTH);
+    // Draw the board
+    glUseProgram(BoardProgramId);
+    glUniformMatrix4fv(BoardMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, BoardTexture);
+    glUniform1i(BoardTextureLocation, 0);
+    glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
 
+    // Draw the mouse point
+    glUseProgram(MouseProgramId);
+    glUniformMatrix4fv(MouseMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glm::vec3 currentMouseColor = mousePressed ? red : yellow;
+    glUniform3fv(MouseColorLocation, 1, &currentMouseColor[0]);
+    glUniform2f(MousePositionLocation, mousePos.x, mousePos.y);
+    glPointSize(20.0f);
+    glDrawArrays(GL_POINTS, 4, 1);
+
+    glutSwapBuffers();
     glFlush();
+}
+
+void MouseMove(int x, int y)
+{
+    float normalizedX{ x / winWidth };
+    float normalizedY{ (winHeight - y) / winHeight };
+
+    mousePos.x = normalizedX * (xMax - xMin) + xMin;
+    mousePos.y = normalizedY * (yMax - yMin) + yMin;
+    glutPostRedisplay();
+}
+
+void MouseClick(int button, int state, int, int)
+{
+    if (button == GLUT_LEFT_BUTTON) 
+    {
+        if (state == GLUT_DOWN) 
+        {
+            mousePressed = true;
+        }
+        else if (state == GLUT_UP) 
+        {
+            mousePressed = false;
+        }
+        glutPostRedisplay();
+    }
+}
+
+/* Cleanup Section */
+void DestroyShaders(void)
+{
+    glDeleteProgram(BoardProgramId);
+    glDeleteProgram(MouseProgramId);
+}
+
+void DestroyVBO(void)
+{
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &BoardVboId);
+    glDeleteBuffers(1, &BoardEboId);
+
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &BoardVaoId);
 }
 
 void Cleanup(void)
@@ -132,18 +208,22 @@ void Cleanup(void)
     DestroyVBO();
 }
 
+/* Main Section */
 int main(int argc, char* argv[])
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(winWidth, winHeight);
     glutCreateWindow("CueQuest");
 
-    glewInit(); 
-    
+    glewInit();
+
     Initialize();
     glutDisplayFunc(RenderFunction);
+    glutMouseFunc(MouseClick);
+    glutMotionFunc(MouseMove);
+    glutPassiveMotionFunc(MouseMove);
     glutCloseFunc(Cleanup);
 
     glutMainLoop();

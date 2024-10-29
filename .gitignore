@@ -227,3 +227,6 @@ $RECYCLE.BIN/
 .vs
 CueQuest
 /x64
+stuff.todo
+shaders/circle_shader.frag
+shaders/circle_shader.vert
