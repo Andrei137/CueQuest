@@ -484,6 +484,7 @@ xcopy /y /d "$(ProjectDir)lib\x64\SOIL\*.dll" "$(OutDir)" &amp;</Command>
     <ClInclude Include="include\SOIL.h" />
     <ClInclude Include="include\Ball.h" />
     <ClInclude Include="include\Board.h" />
+    <ClInclude Include="include\Constants.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="include\glm\CMakeLists.txt" />

@@ -1,4 +1,5 @@
-﻿#include <windows.h>
+﻿#include "Constants.h"
+#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glew.h> 
@@ -23,22 +24,15 @@ GLuint
     BoardMatrixLocation,
     BoardTextureLocation,
     BoardTexture;
-const GLfloat 
-    winWidth{ 1280 }, 
-    winHeight{ 720 };
 glm::vec2 
     mousePos;
 glm::mat4 
     myMatrix, 
     resizeMatrix;
-bool 
+bool
     mousePressed{ false };
-const float 
-    // AR 16:9 (factor 75)
-    xMin{ -600.0f },
-    xMax{ 600.0f }, 
-    yMin{ -337.5f }, 
-    yMax{ 337.5f };
+int
+    currLevel{ 1 };
 
 /* Initialization Section */
 void LoadTexture(const char* photoPath, GLuint& texture)
@@ -74,11 +68,12 @@ void Initialize(void)
 {
     glClearColor(0.10f, 0.16f, 0.25f, 1.0f);
 
-    LoadTexture("textures/table.png", BoardTexture);
+    LoadTexture((TEXTURES_PATH + "board.png").c_str(), BoardTexture);
 
     CreateShaders();
 
     // Ball
+    Ball::LoadCenters(currLevel);
     Ball::CreateVBO();
     BallMatrixLocation = glGetUniformLocation(BallProgramId, "myMatrix");
 
@@ -88,7 +83,7 @@ void Initialize(void)
     BoardTextureLocation = glGetUniformLocation(BoardProgramId, "myTexture");
 
     // Transformations
-    resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
+    resizeMatrix = glm::ortho(XMIN_SCREEN, XMAX_SCREEN, YMIN_SCREEN, YMAX_SCREEN);
 }
 
 /* Render Section */
@@ -111,7 +106,7 @@ void RenderFunction(void)
     glUseProgram(BallProgramId);
     glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glBindVertexArray(Ball::VaoId);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(0));
+    glDrawElements(GL_TRIANGLES, NO_BALLS * NO_TRIANGLE_COORDS, GL_UNSIGNED_INT, (void*)(0));
 
     glutSwapBuffers();
     glFlush();
@@ -119,11 +114,12 @@ void RenderFunction(void)
 
 void MouseMove(int x, int y)
 {
-    const float normalizedX{ x / winWidth };
-    const float normalizedY{ (winHeight - y) / winHeight };
+    const float normalizedX{ x / WIDTH };
+    const float normalizedY{ (HEIGHT - y) / HEIGHT };
 
-    mousePos.x = normalizedX * (xMax - xMin) + xMin;
-    mousePos.y = normalizedY * (yMax - yMin) + yMin;
+    mousePos.x = normalizedX * (XMAX_SCREEN - XMIN_SCREEN) + XMIN_SCREEN;
+    mousePos.y = normalizedY * (YMAX_SCREEN - YMIN_SCREEN) + YMIN_SCREEN;
+
     glutPostRedisplay();
 }
 
@@ -134,6 +130,14 @@ void MouseClick(int button, int state, int, int)
         if (state == GLUT_DOWN) 
         {
             mousePressed = true;
+
+            if (XMIN_BOARD < mousePos.x && mousePos.x < XMAX_BOARD &&
+                YMIN_BOARD < mousePos.y && mousePos.y < YMAX_BOARD)
+            {
+                Ball::centers[0] = Ball::Point{ mousePos.x, mousePos.y };
+                Ball::UpdateVBO();
+            }
+
         }
         else if (state == GLUT_UP) 
         {
@@ -162,9 +166,9 @@ int main(int argc, char* argv[])
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowPosition(100, 100);
-    glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("CueQuest");
+    glutInitWindowPosition(POSX, POSY);
+    glutInitWindowSize(WIDTH, HEIGHT);
+    glutCreateWindow(TITLE.c_str());
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable( GL_BLEND );
 

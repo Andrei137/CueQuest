@@ -1,3 +1,4 @@
+#include "Constants.h"
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "loadShaders.h"
@@ -14,10 +15,10 @@ namespace Board
         // AR 16:9 (factor 60)
         static const GLfloat Vertices[] =
         {
-            -480.0f, -270.0f,   0.0f, 0.0f,
-            480.0f, -270.0f,   1.0f, 0.0f,
-            480.0f,  270.0f,   1.0f, 1.0f,
-            -480.0f,  270.0f,   0.0f, 1.0f,
+            XMIN_BOARD, YMIN_BOARD, 0.0f, 0.0f,
+            XMAX_BOARD, YMIN_BOARD, 1.0f, 0.0f,
+            XMAX_BOARD,  YMAX_BOARD, 1.0f, 1.0f,
+            XMIN_BOARD,  YMAX_BOARD, 0.0f, 1.0f,
         };
 
         static const GLuint Indices[] =
@@ -32,7 +33,7 @@ namespace Board
         glBindBuffer(GL_ARRAY_BUFFER, VboId);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
         
-        glGenBuffers(2, &EboId);
+        glGenBuffers(1, &EboId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
 
@@ -47,7 +48,10 @@ namespace Board
 
     GLuint CreateShaders(void)
     {
-        return LoadShaders("shaders/board.vert", "shaders/board.frag");
+        return LoadShaders(
+            (SHADERS_PATH + "board.vert").c_str(),
+            (SHADERS_PATH + "board.frag").c_str()
+        );
     }
 
     void DestroyVBO(void)
