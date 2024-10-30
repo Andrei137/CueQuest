@@ -14,10 +14,10 @@ namespace Board
         // AR 16:9 (factor 60)
         static const GLfloat Vertices[] =
         {
-            -480.0f, -270.0f,  0.0f,  1.0f,   0.0f, 0.0f,
-            480.0f, -270.0f,  0.0f,  1.0f,   1.0f, 0.0f,
-            480.0f,  270.0f,  0.0f,  1.0f,   1.0f, 1.0f,
-            -480.0f,  270.0f,  0.0f,  1.0f,   0.0f, 1.0f,
+            -480.0f, -270.0f,   0.0f, 0.0f,
+            480.0f, -270.0f,   1.0f, 0.0f,
+            480.0f,  270.0f,   1.0f, 1.0f,
+            -480.0f,  270.0f,   0.0f, 1.0f,
         };
 
         static const GLuint Indices[] =
@@ -38,11 +38,11 @@ namespace Board
 
         // 0 = Position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
         
         // 1 = Texture
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
     }
 
     GLuint CreateShaders(void)

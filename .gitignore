@@ -228,6 +228,4 @@ $RECYCLE.BIN/
 CueQuest
 /x64
 stuff.todo
-shaders/circle.frag
-shaders/circle.vert
 textures/table.png.backup
