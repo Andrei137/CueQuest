@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <GL/glew.h> 
 #include <GL/freeglut.h>
-#include "loadShaders.h"
 #include "SOIL.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -23,27 +22,18 @@ GLuint
     BoardProgramId,
     BoardMatrixLocation,
     BoardTextureLocation,
-    BoardTexture,
-
-    // Mouse
-    MouseProgramId,
-    MouseMatrixLocation,
-    MouseColorLocation,
-    MousePositionLocation;
-GLfloat 
+    BoardTexture;
+const GLfloat 
     winWidth{ 1280 }, 
     winHeight{ 720 };
 glm::vec2 
     mousePos;
-glm::vec3
-    red{ 1.0f, 0.0f, 0.0f },
-    yellow{ 1.0f, 1.0f, 0.0f };
 glm::mat4 
     myMatrix, 
     resizeMatrix;
 bool 
     mousePressed{ false };
-float 
+const float 
     // AR 16:9 (factor 75)
     xMin{ -600.0f },
     xMax{ 600.0f }, 
@@ -78,7 +68,6 @@ void CreateShaders(void)
 
     BallProgramId = Ball::CreateShaders();
     BoardProgramId = Board::CreateShaders();
-    MouseProgramId = LoadShaders("shaders/mouse.vert", "shaders/mouse.frag");
 }
 
 void Initialize(void)
@@ -97,11 +86,6 @@ void Initialize(void)
     Board::CreateVBO();
     BoardMatrixLocation = glGetUniformLocation(BoardProgramId, "myMatrix");
     BoardTextureLocation = glGetUniformLocation(BoardProgramId, "myTexture");
-
-    // Mouse
-    MouseMatrixLocation = glGetUniformLocation(MouseProgramId, "myMatrix");
-    MouseColorLocation = glGetUniformLocation(MouseProgramId, "mouseColor");
-    MousePositionLocation = glGetUniformLocation(MouseProgramId, "mousePosition");
 
     // Transformations
     resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
@@ -122,19 +106,8 @@ void RenderFunction(void)
     glUniform1i(BoardTextureLocation, 0);
     glBindVertexArray(Board::VaoId);
     glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-
-    // Draw the mouse point
-    glUseProgram(MouseProgramId);
-    glEnable(GL_POINT_SMOOTH);
-    glUniformMatrix4fv(MouseMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-    glm::vec3 currentMouseColor = mousePressed ? red : yellow;
-    glUniform3fv(MouseColorLocation, 1, &currentMouseColor[0]);
-    glUniform2f(MousePositionLocation, mousePos.x, mousePos.y);
-    glPointSize(20.0f);
-    glDrawArrays(GL_POINTS, 8, 1);
-    glDisable(GL_POINT_SMOOTH);
-
-     // Draw the ball
+     
+    // Draw the ball
     glUseProgram(BallProgramId);
     glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glBindVertexArray(Ball::VaoId);
@@ -146,8 +119,8 @@ void RenderFunction(void)
 
 void MouseMove(int x, int y)
 {
-    float normalizedX{ x / winWidth };
-    float normalizedY{ (winHeight - y) / winHeight };
+    const float normalizedX{ x / winWidth };
+    const float normalizedY{ (winHeight - y) / winHeight };
 
     mousePos.x = normalizedX * (xMax - xMin) + xMin;
     mousePos.y = normalizedY * (yMax - yMin) + yMin;
@@ -173,8 +146,8 @@ void MouseClick(int button, int state, int, int)
 /* Cleanup Section */
 void DestroyShaders(void)
 {
+    glDeleteProgram(BallProgramId);
     glDeleteProgram(BoardProgramId);
-    glDeleteProgram(MouseProgramId);
 }
 
 void Cleanup(void)
