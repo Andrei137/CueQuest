@@ -1,7 +1,7 @@
 ﻿#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL/glew.h>
+#include <GL/glew.h> 
 #include <GL/freeglut.h>
 #include "loadShaders.h"
 #include "SOIL.h"
@@ -9,15 +9,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
 #include "phys.h"
+#include "Board.h"
+#include "Ball.h"
 
 /* Variables Section */
 GLuint
+    // Ball
+    BallProgramId,
+    BallMatrixLocation,
+
     // Board
-    BoardVaoId,
-    BoardVboId,
-    BoardEboId,
     BoardProgramId,
     BoardMatrixLocation,
     BoardTextureLocation,
@@ -25,27 +27,28 @@ GLuint
 
     // Mouse
     MouseProgramId,
+    MouseMatrixLocation,
     MouseColorLocation,
-    MousePositionLocation,
-    MouseMatrixLocation;
-GLfloat
-    winWidth{ 1280 },
+    MousePositionLocation;
+GLfloat 
+    winWidth{ 1280 }, 
     winHeight{ 720 };
-glm::vec2
+glm::vec2 
     mousePos;
 glm::vec3
     red{ 1.0f, 0.0f, 0.0f },
     yellow{ 1.0f, 1.0f, 0.0f };
-glm::mat4
-    myMatrix,
+glm::mat4 
+    myMatrix, 
     resizeMatrix;
-bool
+bool 
     mousePressed{ false };
-float
-    xMin{ -700.f },
-    xMax{ 700.f },
-    yMin{ -350.f },
-    yMax{ 350.f };
+float 
+    // AR 16:9 (factor 75)
+    xMin{ -600.0f },
+    xMax{ 600.0f }, 
+    yMin{ -337.5f }, 
+    yMax{ 337.5f };
 
 /* Initialization Section */
 void LoadTexture(const char* photoPath, GLuint& texture)
@@ -68,65 +71,39 @@ void LoadTexture(const char* photoPath, GLuint& texture)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void CreateBoardVBO(void)
-{
-    static const GLfloat Vertices[] =
-    {
-        -700.0f, -350.0f,  0.0f,  1.0f,   0.0f, 0.0f,
-        700.0f, -350.0f,  0.0f,  1.0f,   1.0f, 0.0f,
-        700.0f,  350.0f,  0.0f,  1.0f,   1.0f, 1.0f,
-        -700.0f,  350.0f,  0.0f,  1.0f,   0.0f, 1.0f,
-    };
-
-    static const GLuint Indices[] =
-    {
-        0, 1, 2, 3
-    };
-
-    glGenVertexArrays(1, &BoardVaoId);
-    glBindVertexArray(BoardVaoId);
-
-    glGenBuffers(1, &BoardVboId);
-    glBindBuffer(GL_ARRAY_BUFFER, BoardVboId);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &BoardEboId);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BoardEboId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
-
-    // 0 = Position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-
-    // 1 = Texture
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(GLfloat)));
-}
-
 void CreateShaders(void)
 {
     // The vertex shader (.vert) affects the geonetry of the scene
     // The fragment shader (.frag) affects the color of the pixels
 
-    BoardProgramId = LoadShaders("shaders/board_shader.vert", "shaders/board_shader.frag");
-    MouseProgramId = LoadShaders("shaders/mouse_shader.vert", "shaders/mouse_shader.frag");
+    BallProgramId = Ball::CreateShaders();
+    BoardProgramId = Board::CreateShaders();
+    MouseProgramId = LoadShaders("shaders/mouse.vert", "shaders/mouse.frag");
 }
 
 void Initialize(void)
 {
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.10f, 0.16f, 0.25f, 1.0f);
 
     LoadTexture("textures/table.png", BoardTexture);
 
-    CreateBoardVBO();
     CreateShaders();
 
+    // Ball
+    Ball::CreateVBO();
+    BallMatrixLocation = glGetUniformLocation(BallProgramId, "myMatrix");
+
+    // Board
+    Board::CreateVBO();
     BoardMatrixLocation = glGetUniformLocation(BoardProgramId, "myMatrix");
     BoardTextureLocation = glGetUniformLocation(BoardProgramId, "myTexture");
+
+    // Mouse
+    MouseMatrixLocation = glGetUniformLocation(MouseProgramId, "myMatrix");
     MouseColorLocation = glGetUniformLocation(MouseProgramId, "mouseColor");
     MousePositionLocation = glGetUniformLocation(MouseProgramId, "mousePosition");
-    MouseMatrixLocation = glGetUniformLocation(MouseProgramId, "myMatrix");
 
+    // Transformations
     resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
 }
 
@@ -138,21 +115,30 @@ void RenderFunction(void)
     myMatrix = resizeMatrix;
 
     // Draw the board
-    glUseProgram(BoardProgramId);
+    glUseProgram(BoardProgramId);   
     glUniformMatrix4fv(BoardMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, BoardTexture);
     glUniform1i(BoardTextureLocation, 0);
+    glBindVertexArray(Board::VaoId);
     glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
 
     // Draw the mouse point
     glUseProgram(MouseProgramId);
+    glEnable(GL_POINT_SMOOTH);
     glUniformMatrix4fv(MouseMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glm::vec3 currentMouseColor = mousePressed ? red : yellow;
     glUniform3fv(MouseColorLocation, 1, &currentMouseColor[0]);
     glUniform2f(MousePositionLocation, mousePos.x, mousePos.y);
     glPointSize(20.0f);
-    glDrawArrays(GL_POINTS, 4, 1);
+    glDrawArrays(GL_POINTS, 8, 1);
+    glDisable(GL_POINT_SMOOTH);
+
+     // Draw the ball
+    glUseProgram(BallProgramId);
+    glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glBindVertexArray(Ball::VaoId);
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(0));
 
     glutSwapBuffers();
     glFlush();
@@ -170,13 +156,13 @@ void MouseMove(int x, int y)
 
 void MouseClick(int button, int state, int, int)
 {
-    if (button == GLUT_LEFT_BUTTON)
+    if (button == GLUT_LEFT_BUTTON) 
     {
-        if (state == GLUT_DOWN)
+        if (state == GLUT_DOWN) 
         {
             mousePressed = true;
         }
-        else if (state == GLUT_UP)
+        else if (state == GLUT_UP) 
         {
             mousePressed = false;
         }
@@ -191,23 +177,11 @@ void DestroyShaders(void)
     glDeleteProgram(MouseProgramId);
 }
 
-void DestroyVBO(void)
-{
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &BoardVboId);
-    glDeleteBuffers(1, &BoardEboId);
-
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &BoardVaoId);
-}
-
 void Cleanup(void)
 {
     DestroyShaders();
-    DestroyVBO();
+    Ball::DestroyVBO();
+    Board::DestroyVBO();
 }
 
 /* Main Section */
@@ -216,8 +190,10 @@ int main(int argc, char* argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize((int)winWidth, (int)winHeight);
+    glutInitWindowSize(winWidth, winHeight);
     glutCreateWindow("CueQuest");
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable( GL_BLEND );
 
     glewInit();
 
