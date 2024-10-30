@@ -1,7 +1,7 @@
 ﻿#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL/glew.h> 
+#include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "loadShaders.h"
 #include "SOIL.h"
@@ -10,11 +10,13 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "phys.h"
+
 /* Variables Section */
 GLuint
     // Board
-    BoardVaoId, 
-    BoardVboId, 
+    BoardVaoId,
+    BoardVboId,
     BoardEboId,
     BoardProgramId,
     BoardMatrixLocation,
@@ -26,23 +28,23 @@ GLuint
     MouseColorLocation,
     MousePositionLocation,
     MouseMatrixLocation;
-GLfloat 
-    winWidth{ 1280 }, 
+GLfloat
+    winWidth{ 1280 },
     winHeight{ 720 };
-glm::vec2 
+glm::vec2
     mousePos;
 glm::vec3
     red{ 1.0f, 0.0f, 0.0f },
     yellow{ 1.0f, 1.0f, 0.0f };
-glm::mat4 
-    myMatrix, 
+glm::mat4
+    myMatrix,
     resizeMatrix;
-bool 
+bool
     mousePressed{ false };
-float 
+float
     xMin{ -700.f },
-    xMax{ 700.f }, 
-    yMin{ -350.f }, 
+    xMax{ 700.f },
+    yMin{ -350.f },
     yMax{ 350.f };
 
 /* Initialization Section */
@@ -87,7 +89,7 @@ void CreateBoardVBO(void)
     glGenBuffers(1, &BoardVboId);
     glBindBuffer(GL_ARRAY_BUFFER, BoardVboId);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-    
+
     glGenBuffers(1, &BoardEboId);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BoardEboId);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
@@ -95,7 +97,7 @@ void CreateBoardVBO(void)
     // 0 = Position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-    
+
     // 1 = Texture
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(GLfloat)));
@@ -168,13 +170,13 @@ void MouseMove(int x, int y)
 
 void MouseClick(int button, int state, int, int)
 {
-    if (button == GLUT_LEFT_BUTTON) 
+    if (button == GLUT_LEFT_BUTTON)
     {
-        if (state == GLUT_DOWN) 
+        if (state == GLUT_DOWN)
         {
             mousePressed = true;
         }
-        else if (state == GLUT_UP) 
+        else if (state == GLUT_UP)
         {
             mousePressed = false;
         }
@@ -214,7 +216,7 @@ int main(int argc, char* argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize(winWidth, winHeight);
+    glutInitWindowSize((int)winWidth, (int)winHeight);
     glutCreateWindow("CueQuest");
 
     glewInit();
