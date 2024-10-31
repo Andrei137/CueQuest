@@ -116,24 +116,27 @@ void MouseClick(int button, int state, int, int)
             mousePressed = false;
         }
     }
-    else if (button == GLUT_RIGHT_BUTTON)
-    {
-        if (state == GLUT_UP) 
-        {
-            if (currLevel == 1)
-            {
-                ++currLevel;
-            }
-            else
-            {
-                --currLevel;
-            }
-            Ball::LoadBalls(currLevel);
-            Ball::UpdateVBO();
-        }
-
-    }
     glutPostRedisplay();
+}
+
+void GenerateLevel(int newLevel=currLevel)
+{
+    currLevel = newLevel;
+    Ball::LoadBalls(currLevel);
+    Ball::UpdateVBO();
+    glutPostRedisplay();
+}
+
+void ProcessNormalKeys(unsigned char key, int x, int y)
+{
+    if (key == 'r')
+    {
+        GenerateLevel();
+    }
+    else if (key >= '1' && key <= '0' + NO_LEVELS)
+    {
+        GenerateLevel(key - '0');
+    }
 }
 
 void RenderFunction(void)
@@ -193,6 +196,7 @@ int main(int argc, char* argv[])
     glutMouseFunc(MouseClick);
     glutMotionFunc(MouseMove);
     glutPassiveMotionFunc(MouseMove);
+    glutKeyboardFunc(ProcessNormalKeys);
     glutCloseFunc(Cleanup);
 
     glutMainLoop();

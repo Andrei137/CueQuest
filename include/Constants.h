@@ -7,7 +7,8 @@
 constexpr int
     BALL_RADIUS{ 15 },
     NO_BALLS{ 9 },
-    NO_TRIANGLE_COORDS{ 3 };
+    NO_TRIANGLE_COORDS{ 3 },
+    NO_LEVELS{ 3 };
 
 const float
     // AR 16:9 (factor 75 for screen, 60 for board)

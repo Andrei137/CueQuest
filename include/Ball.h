@@ -22,10 +22,6 @@ namespace Ball
 
     extern std::vector<Point>
         centers;
-
-    const int 
-        no_balls{ 9 }, 
-        no_coords{ 3 };
         
     std::vector<Point> GetCoords(const Point&);
     void LoadBalls(int);
