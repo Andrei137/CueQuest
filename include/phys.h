@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <vector>
 #include "glm/glm.hpp"
-#include <cstdio>
 
 namespace phys
 {

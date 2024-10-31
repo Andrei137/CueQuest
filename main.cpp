@@ -38,6 +38,9 @@ int
 phys::World
 	scene;
 
+phys::Circle
+	pockets[6];
+
 /* Initialization Section */
 void LoadTexture(const char* photoPath, GLuint& texture)
 {
@@ -67,6 +70,17 @@ void CreateShaders()
 
 void InitPhys()
 {
+	// Pockets are stored separately so they don't interfere with collision checks and just exist
+	int k{ 0 };
+	for(float x : {XMIN_BOARD + 40.f, 0.f, XMAX_BOARD - 40.f})
+		for(float y : {YMIN_BOARD + 38.f, YMAX_BOARD - 38.f})
+		{
+			pockets[k].m_center.x = x;
+			pockets[k].m_center.y = y;
+			pockets[k].setRadius(30.f);
+			++k;
+		}
+
 	phys::Body* body;
 
 	rand();
@@ -78,9 +92,8 @@ void InitPhys()
 		// TODO: make all vectors use the same type (most likely glm::vec2)
 		body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
 		// TODO: remove this after the test
-		body->m_speed.x = rand()%10;
-		body->m_speed.y = rand()%10;
-//		}
+		body->m_speed.x = (float)(rand()%10*3);
+		body->m_speed.y = (float)(rand()%10*3);
 	}
 
 	// Left
@@ -107,7 +120,8 @@ void InitPhys()
 	body = scene.makeBody();
 	body->setShape(phys::AxisParalelRectangle(phys::vec2( 210.f, YMAX_BOARD), phys::vec2(172.5f, 60.f)));
 
-	// Pockets
+	// Pockets helpers
+	// TODO: Fix these so the collisions are better
 	// Top right
 	body = scene.makeBody();
 	body->setShape(phys::RotatibleRectangle(phys::vec2(453.5f, 166.5f), phys::vec2(25.f, 25.f), PI / 3.f));
@@ -252,6 +266,27 @@ void physEngine(int)
 
 	for(int i{ 0 }; i < NR_BALLS; ++i)
 	{
+		if(!Ball::pocketed[i])
+		{
+			phys::Shape* shape = scene.m_bodies[i]->getShape();
+			assert(shape->m_shapeType == phys::SH_CIRCLE);
+			phys::Circle* circle = static_cast<phys::Circle*>(shape);
+
+			for(int j{ 0 }; j < 6; ++j)
+			{
+				if(phys::collision::checkCollision(circle, pockets + j))
+				{
+					// Ball i got potted. Remove it from physics world by moving it to a coordinate outside the screen.
+					// We do this so that it will not affect calculations
+					scene.m_bodies[i]->m_speed = scene.m_bodies[i]->m_acceleration = phys::vec2(0.f, 0.f);
+					circle->m_center.x = static_cast<float>(1e20);
+					circle->m_center.y = i * 3.f /* Anything at least equal to 2 should work. */ * BALL_RADIUS;
+
+					Ball::pocketed[i] = true;
+				}
+			}
+		}
+
 		auto center_i = scene.m_bodies[i]->getCenter();
 		Ball::centers[i].x = center_i.x;
 		Ball::centers[i].y = center_i.y;
