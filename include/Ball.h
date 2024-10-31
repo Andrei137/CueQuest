@@ -27,8 +27,8 @@ namespace Ball
         no_balls{ 9 }, 
         no_coords{ 3 };
         
-    std::vector<Point> getCoords(const Point&);
-    void LoadCenters(int);
+    std::vector<Point> GetCoords(const Point&);
+    void LoadBalls(int);
     void CreateVBO();
     void UpdateVBO();
     GLuint CreateShaders(void);

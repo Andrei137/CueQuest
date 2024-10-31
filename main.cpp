@@ -57,9 +57,6 @@ void LoadTexture(const char* photoPath, GLuint& texture)
 
 void CreateShaders(void)
 {
-    // The vertex shader (.vert) affects the geonetry of the scene
-    // The fragment shader (.frag) affects the color of the pixels
-
     BallProgramId = Ball::CreateShaders();
     BoardProgramId = Board::CreateShaders();
 }
@@ -73,7 +70,7 @@ void Initialize(void)
     CreateShaders();
 
     // Ball
-    Ball::LoadCenters(currLevel);
+    Ball::LoadBalls(currLevel);
     Ball::CreateVBO();
     BallMatrixLocation = glGetUniformLocation(BallProgramId, "myMatrix");
 
@@ -87,31 +84,6 @@ void Initialize(void)
 }
 
 /* Render Section */
-void RenderFunction(void)
-{
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    myMatrix = resizeMatrix;
-
-    // Draw the board
-    glUseProgram(BoardProgramId);   
-    glUniformMatrix4fv(BoardMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, BoardTexture);
-    glUniform1i(BoardTextureLocation, 0);
-    glBindVertexArray(Board::VaoId);
-    glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-     
-    // Draw the ball
-    glUseProgram(BallProgramId);
-    glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-    glBindVertexArray(Ball::VaoId);
-    glDrawElements(GL_TRIANGLES, NO_BALLS * NO_TRIANGLE_COORDS, GL_UNSIGNED_INT, (void*)(0));
-
-    glutSwapBuffers();
-    glFlush();
-}
-
 void MouseMove(int x, int y)
 {
     const float normalizedX{ x / WIDTH };
@@ -143,8 +115,50 @@ void MouseClick(int button, int state, int, int)
         {
             mousePressed = false;
         }
-        glutPostRedisplay();
     }
+    else if (button == GLUT_RIGHT_BUTTON)
+    {
+        if (state == GLUT_UP) 
+        {
+            if (currLevel == 1)
+            {
+                ++currLevel;
+            }
+            else
+            {
+                --currLevel;
+            }
+            Ball::LoadBalls(currLevel);
+            Ball::UpdateVBO();
+        }
+
+    }
+    glutPostRedisplay();
+}
+
+void RenderFunction(void)
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    myMatrix = resizeMatrix;
+
+    // Draw the board
+    glUseProgram(BoardProgramId);   
+    glUniformMatrix4fv(BoardMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, BoardTexture);
+    glUniform1i(BoardTextureLocation, 0);
+    glBindVertexArray(Board::VaoId);
+    glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
+     
+    // Draw the balls
+    glUseProgram(BallProgramId);
+    glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glBindVertexArray(Ball::VaoId);
+    glDrawElements(GL_TRIANGLES, NO_BALLS * NO_TRIANGLE_COORDS, GL_UNSIGNED_INT, (void*)(0));
+
+    glutSwapBuffers();
+    glFlush();
 }
 
 /* Cleanup Section */

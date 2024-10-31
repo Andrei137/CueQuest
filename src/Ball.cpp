@@ -20,7 +20,7 @@ namespace Ball
 
     bool firstInit{ true };
     
-    std::vector<Point> getCoords(const Point& center)
+    std::vector<Point> GetCoords(const Point& center)
     {
         Point top{ center.x, center.y + 2 * BALL_RADIUS };
         Point left_bottom{ center.x - SQRT3 * BALL_RADIUS, center.y - BALL_RADIUS };
@@ -32,8 +32,9 @@ namespace Ball
         };
     }
 
-    void LoadCenters(int currLevel)
+    void LoadBalls(int currLevel)
     {
+        centers.clear();
         std::ifstream file(LEVELS_PATH + std::to_string(currLevel) + ".txt");
         Point center;
         while (file >> center)
@@ -63,7 +64,7 @@ namespace Ball
         int currIdx{ 0 };
         for (int i = 0; i < NO_BALLS; ++i)
         {
-            std::vector<Point> coords{ getCoords(centers[i]) };
+            std::vector<Point> coords{ GetCoords(centers[i]) };
 
             for (int j = 0; j < NO_TRIANGLE_COORDS; ++j)
             {
