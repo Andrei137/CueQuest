@@ -10,7 +10,7 @@ constexpr int
     BALL_RADIUS{ 15 },
     NR_BALLS{ 9 },
     NR_TRIANGLE_COORDS{ 3 },
-    NR_LEVELS{ 3 },
+    NR_LEVELS{ 4 },
     TOTAL_BALLS{ NR_BALLS + 1 };
 
 const float
