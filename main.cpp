@@ -10,8 +10,8 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "phys.h"
-#include "Board.h"
 #include "Ball.h"
+#include "Texture.h"
 
 /* Variables Section */
 GLuint
@@ -19,18 +19,20 @@ GLuint
     BallProgramId,
     BallMatrixLocation,
 
-    // Board
-    BoardProgramId,
-    BoardMatrixLocation,
-    BoardTextureLocation,
-    BoardTexture;
+    // Board & Text
+    TextureProgramId,
+    TextureMatrixLocation,
+    TextureLocation,
+    BoardTexture,
+    TextTexture;
 glm::vec2 
     mousePos;
 glm::mat4 
     myMatrix, 
     resizeMatrix;
 bool
-    mousePressed{ false };
+    mouseHeld{ false },
+    mouseShoot{ false };
 int
     currLevel{ 1 };
 
@@ -58,14 +60,15 @@ void LoadTexture(const char* photoPath, GLuint& texture)
 void CreateShaders(void)
 {
     BallProgramId = Ball::CreateShaders();
-    BoardProgramId = Board::CreateShaders();
+    TextureProgramId = Texture::CreateShaders();
 }
 
 void Initialize(void)
 {
-    glClearColor(0.10f, 0.16f, 0.25f, 1.0f);
+    glClearColor(0.0784f, 0.1372f, 0.3019f, 1.0f);
 
     LoadTexture((TEXTURES_PATH + "board.png").c_str(), BoardTexture);
+    LoadTexture((TEXTURES_PATH + "text.png").c_str(), TextTexture);
 
     CreateShaders();
 
@@ -74,20 +77,37 @@ void Initialize(void)
     Ball::CreateVBO();
     BallMatrixLocation = glGetUniformLocation(BallProgramId, "myMatrix");
 
-    // Board
-    Board::CreateVBO();
-    BoardMatrixLocation = glGetUniformLocation(BoardProgramId, "myMatrix");
-    BoardTextureLocation = glGetUniformLocation(BoardProgramId, "myTexture");
+    // Board & Text
+    Texture::CreateVBO();
+    TextureMatrixLocation = glGetUniformLocation(TextureProgramId, "myMatrix");
+    TextureLocation = glGetUniformLocation(TextureProgramId, "myTexture");
 
     // Transformations
     resizeMatrix = glm::ortho(XMIN_SCREEN, XMAX_SCREEN, YMIN_SCREEN, YMAX_SCREEN);
 }
 
 /* Render Section */
+bool MouseInsideBall()
+{
+    const float dx{ mousePos.x - Ball::centers[0].x },
+                dy{ mousePos.y - Ball::centers[0].y },
+                distanceSqared{ dx * dx + dy * dy };
+    return distanceSqared <= BALL_RADIUS * BALL_RADIUS;
+}
+
+void HandleShoot(bool validShot)
+{
+    Ball::centers[0] = Ball::Point{ 
+        (rand() % (int)(XMAX_BOARD - XMIN_BOARD)) + XMIN_BOARD, 
+        (rand() % (int)(YMAX_BOARD - YMIN_BOARD)) + YMIN_BOARD 
+    };
+    Ball::UpdateVBO();
+}
+
 void MouseMove(int x, int y)
 {
-    const float normalizedX{ x / WIDTH };
-    const float normalizedY{ (HEIGHT - y) / HEIGHT };
+    const float normalizedX{ x / WIDTH },
+                normalizedY{ (HEIGHT - y) / HEIGHT };
 
     mousePos.x = normalizedX * (XMAX_SCREEN - XMIN_SCREEN) + XMIN_SCREEN;
     mousePos.y = normalizedY * (YMAX_SCREEN - YMIN_SCREEN) + YMIN_SCREEN;
@@ -99,21 +119,37 @@ void MouseClick(int button, int state, int, int)
 {
     if (button == GLUT_LEFT_BUTTON) 
     {
+        if (state == GLUT_DOWN)
+        {
+            if (!mouseHeld && MouseInsideBall())
+            {
+                mouseHeld = true;
+            }
+        }
+        else if (state == GLUT_UP)
+        {
+            if (mouseHeld)
+            {
+                mouseHeld = false;
+                HandleShoot(!MouseInsideBall());
+            }
+        }
+    }
+    else if (button == GLUT_RIGHT_BUTTON)
+    {
         if (state == GLUT_DOWN) 
         {
-            mousePressed = true;
-
             if (XMIN_BOARD < mousePos.x && mousePos.x < XMAX_BOARD &&
                 YMIN_BOARD < mousePos.y && mousePos.y < YMAX_BOARD)
             {
-                Ball::centers[0] = Ball::Point{ mousePos.x, mousePos.y };
-                Ball::UpdateVBO();
+                // Ball::centers[0] = Ball::Point{ mousePos.x, mousePos.y };
+                int currBall{ Ball::GetCurrentBall() };
+                if (currBall != 0)
+                {
+                    Ball::pocketed[Ball::GetCurrentBall()] = true;
+                    Ball::UpdateVBO();
+                }
             }
-
-        }
-        else if (state == GLUT_UP) 
-        {
-            mousePressed = false;
         }
     }
     glutPostRedisplay();
@@ -133,7 +169,7 @@ void ProcessNormalKeys(unsigned char key, int x, int y)
     {
         GenerateLevel();
     }
-    else if (key >= '1' && key <= '0' + NO_LEVELS)
+    else if (key >= '1' && key <= '0' + NR_LEVELS)
     {
         GenerateLevel(key - '0');
     }
@@ -146,19 +182,23 @@ void RenderFunction(void)
     myMatrix = resizeMatrix;
 
     // Draw the board
-    glUseProgram(BoardProgramId);   
-    glUniformMatrix4fv(BoardMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+    glUseProgram(TextureProgramId);   
+    glUniformMatrix4fv(TextureMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, BoardTexture);
-    glUniform1i(BoardTextureLocation, 0);
-    glBindVertexArray(Board::VaoId);
-    glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
+    glUniform1i(TextureLocation, 0);
+    glBindVertexArray(Texture::VaoId);
+    glDrawElements(GL_POLYGON, CORNERS, GL_UNSIGNED_INT, (void*)(0));
+
+    // Draw the text
+    glBindTexture(GL_TEXTURE_2D, TextTexture);
+    glDrawElements(GL_POLYGON, CORNERS, GL_UNSIGNED_INT, (void*)(4 * sizeof(GLuint)));
      
     // Draw the balls
     glUseProgram(BallProgramId);
     glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glBindVertexArray(Ball::VaoId);
-    glDrawElements(GL_TRIANGLES, NO_BALLS * NO_TRIANGLE_COORDS, GL_UNSIGNED_INT, (void*)(0));
+    glDrawElements(GL_TRIANGLES, NR_TRIANGLE_COORDS * TOTAL_BALLS, GL_UNSIGNED_INT, (void*)(0));
 
     glutSwapBuffers();
     glFlush();
@@ -168,14 +208,14 @@ void RenderFunction(void)
 void DestroyShaders(void)
 {
     glDeleteProgram(BallProgramId);
-    glDeleteProgram(BoardProgramId);
+    glDeleteProgram(TextureProgramId);
 }
 
 void Cleanup(void)
 {
     DestroyShaders();
     Ball::DestroyVBO();
-    Board::DestroyVBO();
+    Texture::DestroyVBO();
 }
 
 /* Main Section */

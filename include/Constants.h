@@ -5,13 +5,16 @@
 #include <GL/glew.h>
 
 constexpr int
+    CORNERS{ 4 },
+    NR_TEXTURES{ 2 },
     BALL_RADIUS{ 15 },
-    NO_BALLS{ 9 },
-    NO_TRIANGLE_COORDS{ 3 },
-    NO_LEVELS{ 3 };
+    NR_BALLS{ 9 },
+    NR_TRIANGLE_COORDS{ 3 },
+    NR_LEVELS{ 3 },
+    TOTAL_BALLS{ NR_BALLS + 1 };
 
 const float
-    // AR 16:9 (factor 75 for screen, 60 for board)
+    // AR 16:9 (factor 75 for screen, 60 for board, 8 for text)
     XMIN_SCREEN{ -600.0f },
     XMAX_SCREEN{ -XMIN_SCREEN },
     YMIN_SCREEN{ -337.5f },
@@ -20,6 +23,12 @@ const float
     XMAX_BOARD{ -XMIN_BOARD },
     YMIN_BOARD{ -270.5f },
     YMAX_BOARD{ -YMIN_BOARD },
+    XMIN_TEXT{ -560.0f },
+    XMAX_TEXT{ -432.0f },
+    YMIN_TEXT{ 268.0f },
+    YMAX_TEXT{ 340.0f },
+    X_DISPLAY_BALL{ -410.0f },
+    Y_DISPLAY_BALL{ 304.0f },
     SQRT3{ static_cast<float>(sqrt(3)) };
 
 const GLint
@@ -32,6 +41,8 @@ const GLfloat
 
 const std::string
     TITLE{ "CueQuest" },
+    BALL_SHADER{ "ball" },
+    TEXTURE_SHADER{ "texture" },
     LEVELS_PATH{ "resources/levels/level_" },
     SHADERS_PATH{ "resources/shaders/" },
     TEXTURES_PATH{ "resources/textures/" };

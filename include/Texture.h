@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Board
+namespace Texture
 {
     extern GLuint
         VaoId, 

@@ -3,7 +3,7 @@
 #include <GL/freeglut.h>
 #include "loadShaders.h"
 
-namespace Board
+namespace Texture
 {
     GLuint
         VaoId, 
@@ -15,16 +15,24 @@ namespace Board
         // AR 16:9 (factor 60)
         static const GLfloat Vertices[] =
         {
+            // Board
             XMIN_BOARD, YMIN_BOARD, 0.0f, 0.0f,
             XMAX_BOARD, YMIN_BOARD, 1.0f, 0.0f,
-            XMAX_BOARD,  YMAX_BOARD, 1.0f, 1.0f,
-            XMIN_BOARD,  YMAX_BOARD, 0.0f, 1.0f,
+            XMAX_BOARD, YMAX_BOARD, 1.0f, 1.0f,
+            XMIN_BOARD, YMAX_BOARD, 0.0f, 1.0f,
+
+            // Text
+            XMIN_TEXT, YMIN_TEXT, 0.0f, 0.0f,
+            XMAX_TEXT, YMIN_TEXT, 1.0f, 0.0f,
+            XMAX_TEXT, YMAX_TEXT, 1.0f, 1.0f,
+            XMIN_TEXT, YMAX_TEXT, 0.0f, 1.0f
         };
 
-        static const GLuint Indices[] =
+        static GLuint Indices[NR_TEXTURES * CORNERS];
+        for (int i = 0; i < NR_TEXTURES * CORNERS; ++i)
         {
-            0, 1, 2, 3
-        };
+            Indices[i] = i;
+        }
 
         glGenVertexArrays(1, &VaoId);
         glBindVertexArray(VaoId);
@@ -49,8 +57,8 @@ namespace Board
     GLuint CreateShaders(void)
     {
         return LoadShaders(
-            (SHADERS_PATH + "board.vert").c_str(),
-            (SHADERS_PATH + "board.frag").c_str()
+            (SHADERS_PATH + TEXTURE_SHADER + ".vert").c_str(),
+            (SHADERS_PATH + TEXTURE_SHADER + ".frag").c_str()
         );
     }
 

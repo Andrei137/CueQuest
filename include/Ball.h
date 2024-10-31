@@ -22,9 +22,13 @@ namespace Ball
 
     extern std::vector<Point>
         centers;
+
+    extern std::vector<bool>
+        pocketed;
         
     std::vector<Point> GetCoords(const Point&);
     void LoadBalls(int);
+    int GetCurrentBall();
     void CreateVBO();
     void UpdateVBO();
     GLuint CreateShaders(void);
