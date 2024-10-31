@@ -18,6 +18,9 @@ namespace Ball
     std::vector<Point>
         centers;
 
+    std::vector<bool>
+        pocketed;
+
     bool firstInit{ true };
 
     std::vector<Point> GetCoords(const Point& center)
@@ -35,6 +38,7 @@ namespace Ball
     void LoadBalls(int currLevel)
     {
         centers.clear();
+        pocketed = std::vector<bool>(NR_BALLS, false);
         std::ifstream file(LEVELS_PATH + std::to_string(currLevel) + ".txt");
         Point center;
         while (file >> center)
@@ -44,6 +48,18 @@ namespace Ball
         file.close();
     }
 
+    int GetCurrentBall()
+    {
+        for (int i = 1; i < NR_BALLS; ++i)
+        {
+            if (!pocketed[i])
+            {
+                return i;
+            }
+        }
+        return 0;
+    }
+
     void UpdateVBO()
     {
         glBindBuffer(GL_ARRAY_BUFFER, VboId);
@@ -51,7 +67,7 @@ namespace Ball
         const std::vector<glm::vec3> colors{
             { 1.000f, 1.000f, 1.000f }, // 0 - white
             { 0.998f, 0.866f, 0.007f }, // 1 - yellow
-            { 0.000f, 0.146f, 0.854f }, // 2 - blue
+            { 0.196f, 0.525f, 0.988f }, // 2 - blue
             { 0.796f, 0.003f, 0.098f }, // 3 - red
             { 0.470f, 0.007f, 0.850f }, // 4 - purple
             { 0.956f, 0.541f, 0.113f }, // 5 - orange
@@ -60,17 +76,27 @@ namespace Ball
             { 0.058f, 0.050f, 0.039f }  // 8 - black
         };
 
-        static GLfloat Vertices[6 * NO_BALLS * NO_TRIANGLE_COORDS];
+        // The last ball is the one showing which ball needs to be hit
+        static GLfloat Vertices[6 * NR_TRIANGLE_COORDS * TOTAL_BALLS];
         int currIdx{ 0 };
-        for (int i = 0; i < NO_BALLS; ++i)
+
+        // Handle the playable balls
+        for (int i = 0; i < NR_BALLS; ++i)
         {
             std::vector<Point> coords{ GetCoords(centers[i]) };
 
-            for (int j = 0; j < NO_TRIANGLE_COORDS; ++j)
+            for (int j = 0; j < NR_TRIANGLE_COORDS; ++j)
             {
                 // Position
-                Vertices[currIdx++] = coords[j].x;
-                Vertices[currIdx++] = coords[j].y;
+                if (pocketed[i])
+                {
+                    Vertices[currIdx++] = Vertices[currIdx++] = 0.0f;
+                }
+                else
+                {
+                    Vertices[currIdx++] = coords[j].x;
+                    Vertices[currIdx++] = coords[j].y;
+                }
 
                 if (firstInit)
                 {
@@ -89,14 +115,50 @@ namespace Ball
             }
         }
 
+        // Handle the display ball
+        std::vector<Point> coords(3);
+        if (firstInit) 
+        {
+            coords = GetCoords(Point{ X_DISPLAY_BALL, Y_DISPLAY_BALL });
+        }
+        for (int j = 0; j < NR_TRIANGLE_COORDS; ++j)
+        {
+            if (firstInit)
+            {
+                // Position
+                Vertices[currIdx++] = coords[j].x;
+                Vertices[currIdx++] = coords[j].y;
+            }
+            else
+            {
+                currIdx += 2;
+            }
+
+            // Color (the same as the current ball)
+            Vertices[currIdx++] = colors[GetCurrentBall()].r;
+            Vertices[currIdx++] = colors[GetCurrentBall()].g;
+            Vertices[currIdx++] = colors[GetCurrentBall()].b;
+
+            if (firstInit)
+            {
+                // Triangle Position Index
+                Vertices[currIdx++] = (float)j;
+            }
+            else
+            {
+                currIdx += 1;
+            }
+        }
+
         firstInit = false;
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
     }
 
     void CreateVBO()
     {
-        static GLuint Indices[3 * NO_BALLS];
-        for (int i = 0; i < NO_BALLS * 3; ++i)
+        // The last ball is the one showing which ball needs to be hit
+        static GLuint Indices[3 * TOTAL_BALLS];
+        for (int i = 0; i < 3 * TOTAL_BALLS; ++i)
         {
             Indices[i] = i;
         }
@@ -106,7 +168,7 @@ namespace Ball
 
         glGenBuffers(1, &VboId);
         glBindBuffer(GL_ARRAY_BUFFER, VboId);
-        glBufferData(GL_ARRAY_BUFFER, 6 * NO_BALLS * NO_TRIANGLE_COORDS * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, 6 * NR_TRIANGLE_COORDS * TOTAL_BALLS * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
 
         UpdateVBO();
 
@@ -130,8 +192,8 @@ namespace Ball
     GLuint CreateShaders()
     {
         return LoadShaders(
-            (SHADERS_PATH + "ball.vert").c_str(),
-            (SHADERS_PATH + "ball.frag").c_str()
+            (SHADERS_PATH + BALL_SHADER + ".vert").c_str(),
+            (SHADERS_PATH + BALL_SHADER + ".frag").c_str()
         );
     }
 

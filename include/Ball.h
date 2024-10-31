@@ -23,12 +23,12 @@ namespace Ball
     extern std::vector<Point>
         centers;
 
-    const int
-        no_balls{ 9 },
-        no_coords{ 3 };
+    extern std::vector<bool>
+        pocketed;
 
     std::vector<Point> GetCoords(const Point&);
     void LoadBalls(int);
+    int GetCurrentBall();
     void CreateVBO();
     void UpdateVBO();
     GLuint CreateShaders();
