@@ -70,8 +70,8 @@ void InitPhys()
 	phys::Body* body;
 
 	rand();
-	// Primele NO_BALLS elemente din phys engine trebuie sa fie bilele in ordinea corecta
-	for(int i{ 0 }; i < NO_BALLS; ++i)
+	// The first NR_BALLS elements from the physics engine must be the balls, in the correct order
+	for(int i{ 0 }; i < NR_BALLS; ++i)
 	{
 		body = scene.makeBody();
 		body->m_bodyData.setStatic(false, 1.f);
@@ -250,7 +250,7 @@ void physEngine(int)
 {
 	scene.tick(1.f / TICKS_PER_SECOND, 20);
 
-	for(int i{ 0 }; i < NO_BALLS; ++i)
+	for(int i{ 0 }; i < NR_BALLS; ++i)
 	{
 		auto center_i = scene.m_bodies[i]->getCenter();
 		Ball::centers[i].x = center_i.x;
