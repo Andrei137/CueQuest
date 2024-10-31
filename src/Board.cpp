@@ -6,11 +6,11 @@
 namespace Board
 {
     GLuint
-        VaoId, 
-        VboId, 
+        VaoId,
+        VboId,
         EboId;
 
-    void CreateVBO(void)
+    void CreateVBO()
     {
         // AR 16:9 (factor 60)
         static const GLfloat Vertices[] =
@@ -32,7 +32,7 @@ namespace Board
         glGenBuffers(1, &VboId);
         glBindBuffer(GL_ARRAY_BUFFER, VboId);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-        
+
         glGenBuffers(1, &EboId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
@@ -40,13 +40,13 @@ namespace Board
         // 0 = Position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
-        
+
         // 1 = Texture
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
     }
 
-    GLuint CreateShaders(void)
+    GLuint CreateShaders()
     {
         return LoadShaders(
             (SHADERS_PATH + "board.vert").c_str(),
@@ -54,7 +54,7 @@ namespace Board
         );
     }
 
-    void DestroyVBO(void)
+    void DestroyVBO()
     {
         glDisableVertexAttribArray(1);
         glDisableVertexAttribArray(0);

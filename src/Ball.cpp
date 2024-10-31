@@ -19,7 +19,7 @@ namespace Ball
         centers;
 
     bool firstInit{ true };
-    
+
     std::vector<Point> GetCoords(const Point& center)
     {
         Point top{ center.x, center.y + 2 * BALL_RADIUS };
@@ -38,7 +38,7 @@ namespace Ball
         std::ifstream file(LEVELS_PATH + std::to_string(currLevel) + ".txt");
         Point center;
         while (file >> center)
-        {   
+        {
             centers.push_back(center);
         }
         file.close();
@@ -74,7 +74,7 @@ namespace Ball
 
                 if (firstInit)
                 {
-                    // Color 
+                    // Color
                     Vertices[currIdx++] = colors[i].r;
                     Vertices[currIdx++] = colors[i].g;
                     Vertices[currIdx++] = colors[i].b;
@@ -109,7 +109,7 @@ namespace Ball
         glBufferData(GL_ARRAY_BUFFER, 6 * NO_BALLS * NO_TRIANGLE_COORDS * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
 
         UpdateVBO();
-        
+
         glGenBuffers(1, &EboId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
@@ -117,7 +117,7 @@ namespace Ball
         // 0 = Position
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-        
+
         // 1 = Color
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
@@ -127,7 +127,7 @@ namespace Ball
         glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
     }
 
-    GLuint CreateShaders(void)
+    GLuint CreateShaders()
     {
         return LoadShaders(
             (SHADERS_PATH + "ball.vert").c_str(),
@@ -135,7 +135,7 @@ namespace Ball
         );
     }
 
-    void DestroyVBO(void)
+    void DestroyVBO()
     {
         glDisableVertexAttribArray(2);
         glDisableVertexAttribArray(1);

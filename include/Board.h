@@ -3,11 +3,11 @@
 namespace Board
 {
     extern GLuint
-        VaoId, 
-        VboId, 
+        VaoId,
+        VboId,
         EboId;
 
-    void CreateVBO(void);
-    GLuint CreateShaders(void);
-    void DestroyVBO(void);
+    void CreateVBO();
+    GLuint CreateShaders();
+    void DestroyVBO();
 }

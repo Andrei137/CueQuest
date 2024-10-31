@@ -5,7 +5,7 @@
 
 namespace Ball
 {
-    struct Point 
+    struct Point
     {
         float x{}, y{};
 
@@ -16,21 +16,21 @@ namespace Ball
     };
 
     extern GLuint
-        VaoId, 
-        VboId, 
+        VaoId,
+        VboId,
         EboId;
 
     extern std::vector<Point>
         centers;
 
-    const int 
-        no_balls{ 9 }, 
+    const int
+        no_balls{ 9 },
         no_coords{ 3 };
-        
+
     std::vector<Point> GetCoords(const Point&);
     void LoadBalls(int);
     void CreateVBO();
     void UpdateVBO();
-    GLuint CreateShaders(void);
-    void DestroyVBO(void);
+    GLuint CreateShaders();
+    void DestroyVBO();
 }

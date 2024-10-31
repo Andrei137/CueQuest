@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include "glm/glm.hpp"
+#include <cstdio>
 
 namespace phys
 {
@@ -88,6 +89,11 @@ namespace phys
 		vec2 m_center;
 
 		Circle() : m_center(), m_radius() { m_shapeType = SH_CIRCLE; }
+		Circle(vec2 a_center, float a_radius) : m_center(a_center), m_radius(a_radius)
+		{
+			m_shapeType = SH_CIRCLE;
+			assert(a_radius > 0);
+		}
 
 		/** Seteaza raza */
 		void setRadius(float a_radius)
@@ -114,6 +120,7 @@ namespace phys
 		vec2 m_center;
 
 		AxisParalelRectangle() : m_center(), m_halfDims() { m_shapeType = SH_AXIS_RECTANGLE; }
+		AxisParalelRectangle(vec2 a_center, vec2 a_halfDims) : m_center(a_center), m_halfDims(a_halfDims) { m_shapeType = SH_AXIS_RECTANGLE; }
 
 		/** Seteaza dimensiunile dreptunghiului */
 		void setDimensions(vec2 a_dimensions)
@@ -161,6 +168,7 @@ namespace phys
 		float m_rotation;
 
 		RotatibleRectangle() : m_center(), m_rotation(), m_halfDims() { m_shapeType = SH_ROTATIBLE_RECTANGLE; }
+		RotatibleRectangle(vec2 a_center, vec2 a_halfDims, float a_rotation) : m_center(a_center), m_rotation(a_rotation), m_halfDims(a_halfDims) { m_shapeType = SH_ROTATIBLE_RECTANGLE; }
 
 		/** Seteaza dimensiunile dreptunghiului */
 		void setDimensions(vec2 a_dimensions)
@@ -247,6 +255,24 @@ namespace phys
 			return m_shape;
 		}
 
+		vec2& getCenter()
+		{
+			switch(m_shape->m_shapeType)
+			{
+			case SH_CIRCLE:
+				return ((Circle*)m_shape)->m_center;
+			case SH_AXIS_RECTANGLE:
+				return ((AxisParalelRectangle*)m_shape)->m_center;
+			case SH_ROTATIBLE_RECTANGLE:
+				return ((RotatibleRectangle*)m_shape)->m_center;
+			default:
+				// Nu ar trebui sa se poata ajunge aici
+				assert(false);
+				// Aici nu se ajunge, dar ne trebuie un return peste tot
+				return m_speed;
+			}
+		}
+
 		/** Modifica poizitia si viteza corpului. Folosim integrare newtoniana. */
 		void move(const float a_deltaTime)
 		{
@@ -255,25 +281,8 @@ namespace phys
 
 			assert(m_shape);
 
-			vec2* pos = nullptr;
-			switch(m_shape->m_shapeType)
-			{
-			case SH_CIRCLE:
-				pos = &((Circle*)m_shape)->m_center;
-				break;
-			case SH_AXIS_RECTANGLE:
-				pos = &((AxisParalelRectangle*)m_shape)->m_center;
-				break;
-			case SH_ROTATIBLE_RECTANGLE:
-				pos = &((RotatibleRectangle*)m_shape)->m_center;
-				break;
-			default:
-				// Nu ar trebui sa se poata ajunge aici
-				assert(false);
-				break;
-			}
-
-			*pos += a_deltaTime * m_speed;
+			vec2& pos = getCenter();
+			pos += a_deltaTime * m_speed;
 			m_speed += a_deltaTime * m_acceleration;
 		}
 
@@ -302,7 +311,9 @@ namespace phys
 
 			// Normala coliziunii
 			vec2 normal = B->m_center - A->m_center;
-			normal /= sqrt(normal.x * normal.x + normal.y * normal.y);
+			float normMagn = sqrt(normal.x * normal.x + normal.y * normal.y);
+			normal /= normMagn;
+			float penetrationDepth = A->getRadius() + B->getRadius() - normMagn;
 
 			// Magnitudinea normalei
 			float magnitude = -(1 + ELASTICITY) * (dotProduct(a_body1->m_speed - a_body0->m_speed, normal)) \
@@ -312,6 +323,12 @@ namespace phys
 			vec2 impulse = normal * magnitude;
 			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
 			a_body1->m_acceleration += impulse * a_body1->m_bodyData.getInvMass();
+
+			// Corectie
+			const float percent = 20.f; // A NU SE MODIFICA
+			vec2 correction = penetrationDepth / (a_body0->m_bodyData.getInvMass() + a_body1->m_bodyData.getInvMass()) * percent * normal;
+			a_body0->m_acceleration -= a_body0->m_bodyData.getInvMass() * correction;
+			a_body1->m_acceleration += a_body1->m_bodyData.getInvMass() * correction;
 		}
 
 		/// Checker + rezolvator de coliziuni intre un cerc si un dreptunghi
@@ -334,6 +351,7 @@ namespace phys
 
 			// Avem intersectie, vrem sa le separam
 			vec2 normal;
+			float penetrationDepth;
 
 			// Exista doua cazuri, cand centrul cercului este in dreptunghi si cand nu este
 			if(std::fabs(close.x - A->m_center.x) < EPS && std::fabs(close.y - A->m_center.y) < EPS)
@@ -350,16 +368,28 @@ namespace phys
 				if(std::min(x0, x1) < std::min(y0, y1))
 				{
 					if(x0 < x1)
+					{
 						normal.x = -1;
+						penetrationDepth = x0;
+					}
 					else
+					{
 						normal.x = 1;
+						penetrationDepth = x1;
+					}
 				}
 				else
 				{
 					if(y0 < y1)
+					{
 						normal.y = -1;
+						penetrationDepth = y0;
+					}
 					else
+					{
 						normal.y = 1;
+						penetrationDepth = y1;
+					}
 				}
 
 
@@ -368,7 +398,9 @@ namespace phys
 			{
 				// Normala coliziunii
 				normal = A->m_center - close;
-				normal /= sqrt(normal.x * normal.x + normal.y * normal.y);
+				float len = sqrt(normal.x * normal.x + normal.y * normal.y);
+				normal /= len;
+				penetrationDepth = A->getRadius() - len;
 			}
 
 			// Magnitudinea normalei
@@ -377,6 +409,11 @@ namespace phys
 			// Impuls
 			vec2 impulse = normal * magnitude;
 			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
+
+			// Corectie
+			const float percent = 20.f; // A NU SE MODIFICA
+			vec2 correction = penetrationDepth * percent * normal;
+			a_body0->m_acceleration += correction;
 		}
 
 		/// Checker + rezolvator de coliziuni intre un cerc si un dreptunghi rotibil
@@ -404,6 +441,7 @@ namespace phys
 
 			// Avem intersectie, vrem sa le separam
 			vec2 normal;
+			float penetrationDepth;
 
 			// Exista doua cazuri, cand centrul cercului este in dreptunghi si cand nu este
 			if(std::fabs(close.x - newCenter.x) < EPS && std::fabs(close.y - newCenter.y) < EPS)
@@ -420,38 +458,55 @@ namespace phys
 				if(std::min(x0, x1) < std::min(y0, y1))
 				{
 					if(x0 < x1)
+					{
 						normal.x = -1;
+						penetrationDepth = x0;
+					}
 					else
+					{
 						normal.x = 1;
+						penetrationDepth = x1;
+					}
 				}
 				else
 				{
 					if(y0 < y1)
+					{
 						normal.y = -1;
+						penetrationDepth = y0;
+					}
 					else
+					{
 						normal.y = 1;
+						penetrationDepth = y1;
+					}
 				}
-
-
 			}
 			else
 			{
 				// Normala coliziunii
 				normal = newCenter - close;
-				normal /= sqrt(normal.x * normal.x + normal.y * normal.y);
+				float len = sqrt(normal.x * normal.x + normal.y * normal.y);
+				normal /= len;
+				penetrationDepth = A->getRadius() - len;
 			}
-
-			// Magnitudinea normalei
-			float magnitude = (1 + ELASTICITY) * dotProduct(a_body0->m_speed, normal) * a_body0->m_bodyData.getMass();
 
 			// Rotesc inapoi normala
 			vec2 oldNormal = normal;
 			normal.x =  rotation.x * oldNormal.x + rotation.y * oldNormal.y;
-			normal.x = -rotation.y * oldNormal.x + rotation.x * oldNormal.y;
+			normal.y = -rotation.y * oldNormal.x + rotation.x * oldNormal.y;
+
+			// Magnitudinea normalei
+			float magnitude = (1 + ELASTICITY) * dotProduct(a_body0->m_speed, normal);
 
 			// Impuls
 			vec2 impulse = normal * magnitude;
-			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
+			a_body0->m_acceleration -= impulse;
+
+			// Corectie
+			const float percent = 20.f; // A NU SE MODIFICA
+			vec2 correction = penetrationDepth * percent * normal;
+			a_body0->m_acceleration += correction;
 		}
 
 		/// Checker + rezolvator de coliziuni intre un dreptunghi si un cerc
@@ -520,20 +575,23 @@ namespace phys
 		}
 
 		/// Avanseaza lumea cu a_deltaTime secunde.
-		void tick(const float a_deltaTime)
+		void tick(const float a_deltaTime, const int runs)
 		{
-			int i, j, N = (int)m_bodies.size();
+			int i, j, N = (int)m_bodies.size(), run;
 
-			for(i = 0;i < N;++i)
-				m_bodies[i]->m_acceleration = vec2();
+			for(run = 0;run < runs;++run)
+			{
+				for(i = 0;i < N;++i)
+					m_bodies[i]->m_acceleration = vec2();
 
-			// Coliziuni
-			for(i = 1;i < N;++i)
-				for(j = 0;j < i;++j)
-					collision::collisionResolver(m_bodies[i], m_bodies[j]);
+				// Coliziuni
+				for(i = 1;i < N;++i)
+					for(j = 0;j < i;++j)
+						collision::collisionResolver(m_bodies[i], m_bodies[j]);
 
-			for(i = 0;i < N;++i)
-				m_bodies[i]->move(a_deltaTime);
+				for(i = 0;i < N;++i)
+					m_bodies[i]->move(a_deltaTime);
+			}
 		}
 	};
 }

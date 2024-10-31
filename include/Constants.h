@@ -19,14 +19,19 @@ const float
     XMAX_BOARD{ -XMIN_BOARD },
     YMIN_BOARD{ -270.5f },
     YMAX_BOARD{ -YMIN_BOARD },
-    SQRT3{ static_cast<float>(sqrt(3)) };
+    SQRT3{ static_cast<float>(sqrt(3)) },
+    PI{ static_cast<float>(atan2(-1, 0)) };
+
+const GLuint
+	TICKS_PER_SECOND{ 30 },
+	MSPERTICK{ 1000 / TICKS_PER_SECOND };
 
 const GLint
     POSX{ 350 },
     POSY{ 200 };
 
 const GLfloat
-    WIDTH{ 1280 }, 
+    WIDTH{ 1280 },
     HEIGHT{ 720 };
 
 const std::string
