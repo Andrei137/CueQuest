@@ -1,6 +1,7 @@
 // Ilie Dumitru
 
 #include <algorithm>
+#include <vector>
 #include "glm/glm.hpp"
 
 namespace phys
@@ -212,6 +213,10 @@ namespace phys
 			delete m_shape;
 			m_shape = nullptr;
 		}
+		Body(const Body& o) = delete;
+		Body(Body&& o) = delete;
+		Body& operator=(const Body& o) = delete;
+		Body& operator=(Body&& o) = delete;
 
 		/** Seteaza forma corpului la un cerc */
 		void setShape(Circle a_circle)
@@ -240,6 +245,36 @@ namespace phys
 		Shape* getShape()
 		{
 			return m_shape;
+		}
+
+		/** Modifica poizitia si viteza corpului. Folosim integrare newtoniana. */
+		void move(const float a_deltaTime)
+		{
+			if(m_bodyData.isStatic())
+				return;
+
+			assert(m_shape);
+
+			vec2* pos = nullptr;
+			switch(m_shape->m_shapeType)
+			{
+			case SH_CIRCLE:
+				pos = &((Circle*)m_shape)->m_center;
+				break;
+			case SH_AXIS_RECTANGLE:
+				pos = &((AxisParalelRectangle*)m_shape)->m_center;
+				break;
+			case SH_ROTATIBLE_RECTANGLE:
+				pos = &((RotatibleRectangle*)m_shape)->m_center;
+				break;
+			default:
+				// Nu ar trebui sa se poata ajunge aici
+				assert(false);
+				break;
+			}
+
+			*pos += a_deltaTime * m_speed;
+			m_speed += a_deltaTime * m_acceleration;
 		}
 
 	private:
@@ -275,8 +310,8 @@ namespace phys
 
 			// Impuls
 			vec2 impulse = normal * magnitude;
-			a_body0->m_speed -= impulse * a_body0->m_bodyData.getInvMass();
-			a_body1->m_speed += impulse * a_body1->m_bodyData.getInvMass();
+			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
+			a_body1->m_acceleration += impulse * a_body1->m_bodyData.getInvMass();
 		}
 
 		/// Checker + rezolvator de coliziuni intre un cerc si un dreptunghi
@@ -341,7 +376,7 @@ namespace phys
 
 			// Impuls
 			vec2 impulse = normal * magnitude;
-			a_body0->m_speed -= impulse * a_body0->m_bodyData.getInvMass();
+			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
 		}
 
 		/// Checker + rezolvator de coliziuni intre un cerc si un dreptunghi rotibil
@@ -416,7 +451,7 @@ namespace phys
 
 			// Impuls
 			vec2 impulse = normal * magnitude;
-			a_body0->m_speed -= impulse * a_body0->m_bodyData.getInvMass();
+			a_body0->m_acceleration -= impulse * a_body0->m_bodyData.getInvMass();
 		}
 
 		/// Checker + rezolvator de coliziuni intre un dreptunghi si un cerc
@@ -455,4 +490,50 @@ namespace phys
 			     < (a_circle->getRadius() + a_circle->getRadius()) * (a_circle->getRadius() + a_circle->getRadius());
 		}
 	}
+
+	/// Informatii despre lumea din sistemul de fizica + functii relevante
+	struct World
+	{
+		// Corpurile din lume
+		std::vector<Body*> m_bodies;
+
+		World()
+		{
+			// Hack pentru pointeri.
+			m_bodies.reserve(100);
+		}
+		~World()
+		{
+			for(Body* body : m_bodies)
+				delete body;
+		}
+		World(const World& o) = delete;
+		World(World&& o) = delete;
+		World& operator=(const World& o) = delete;
+		World& operator=(World&& o) = delete;
+
+		/// Creeaza un corp in lume si intoarce un pointer la acesta. Informatiile referitoare la corp trebuie modificate extern
+		Body* makeBody()
+		{
+			m_bodies.push_back(new Body());
+			return m_bodies.back();
+		}
+
+		/// Avanseaza lumea cu a_deltaTime secunde.
+		void tick(const float a_deltaTime)
+		{
+			int i, j, N = (int)m_bodies.size();
+
+			for(i = 0;i < N;++i)
+				m_bodies[i]->m_acceleration = vec2();
+
+			// Coliziuni
+			for(i = 1;i < N;++i)
+				for(j = 0;j < i;++j)
+					collision::collisionResolver(m_bodies[i], m_bodies[j]);
+
+			for(i = 0;i < N;++i)
+				m_bodies[i]->move(a_deltaTime);
+		}
+	};
 }
