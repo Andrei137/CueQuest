@@ -14,7 +14,7 @@ namespace phys
 		return a_u.x * a_v.x + a_u.y * a_v.y;
 	}
 
-	const float EPS = (float)1e-6;
+	const float EPS = (float)1e-4;
 
 	/** Informatii despre corpul respectiv.
 	@assert: m_isStatic  <=>  m_invMass == 0

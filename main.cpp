@@ -41,6 +41,9 @@ phys::World
 phys::Circle
 	pockets[6];
 
+bool
+	stationary;
+
 /* Initialization Section */
 void LoadTexture(const char* photoPath, GLuint& texture)
 {
@@ -68,8 +71,31 @@ void CreateShaders()
     TextureProgramId = Texture::CreateShaders();
 }
 
+void resetPhysBalls()
+{
+	phys::Body* body;
+
+	// The first NR_BALLS elements from the physics engine must be the balls, in the correct order
+	for(int i{ 0 }; i < NR_BALLS; ++i)
+	{
+		body = scene.m_bodies[i];
+		body->m_bodyData.setStatic(false, 1.f);
+		// TODO: make all vectors use the same type (most likely glm::vec2)
+		body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
+		// TODO: remove this after the corner helpers work as intended
+		body->m_speed.x = (float)(rand()%10*3);
+		body->m_speed.y = (float)(rand()%10*3);
+//		body->m_speed.x = 0.f;
+//		body->m_speed.y = 0.f;
+		body->m_acceleration = phys::vec2(0.f, 0.f);
+	}
+}
+
 void InitPhys()
 {
+	// We do not allow shots to be taken in the first frame.
+	stationary = false;
+
 	// Pockets are stored separately so they don't interfere with collision checks and just exist
 	int k{ 0 };
 	for(float x : {XMIN_BOARD + 40.f, 0.f, XMAX_BOARD - 40.f})
@@ -81,20 +107,13 @@ void InitPhys()
 			++k;
 		}
 
-	phys::Body* body;
+	// Making the bodies for the balls
+	for(k = 0; k < NR_BALLS; ++k)
+		scene.makeBody();
+	// Setting the balls' positions
+	resetPhysBalls();
 
-	rand();
-	// The first NR_BALLS elements from the physics engine must be the balls, in the correct order
-	for(int i{ 0 }; i < NR_BALLS; ++i)
-	{
-		body = scene.makeBody();
-		body->m_bodyData.setStatic(false, 1.f);
-		// TODO: make all vectors use the same type (most likely glm::vec2)
-		body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
-		// TODO: remove this after the test
-		body->m_speed.x = (float)(rand()%10*3);
-		body->m_speed.y = (float)(rand()%10*3);
-	}
+	phys::Body* body;
 
 	// Left
 	body = scene.makeBody();
@@ -202,11 +221,15 @@ bool MouseInsideBall()
 
 void HandleShoot(bool validShot)
 {
-    Ball::centers[0] = Ball::Point{
-        (rand() % (int)(XMAX_BOARD - XMIN_BOARD)) + XMIN_BOARD,
-        (rand() % (int)(YMAX_BOARD - YMIN_BOARD)) + YMIN_BOARD
-    };
-    Ball::UpdateVBO();
+	if (!validShot)
+		return;
+
+	phys::vec2 ballCenter = static_cast<phys::Circle*>(scene.m_bodies[0]->getShape())->m_center;
+	phys::vec2 mouse = phys::vec2(mousePos.x, mousePos.y);
+	float len = static_cast<float>(sqrt(phys::dotProduct(mouse - ballCenter, mouse - ballCenter)));
+    float strength = std::min(len - BALL_RADIUS, 200.f) * 0.25f;
+    scene.m_bodies[0]->m_speed.x += (mouse.x - ballCenter.x) / len * strength;
+    scene.m_bodies[0]->m_speed.y += (mouse.y - ballCenter.y) / len * strength;
 }
 
 void MouseMove(int x, int y)
@@ -226,7 +249,7 @@ void MouseClick(int button, int state, int, int)
     {
         if (state == GLUT_DOWN)
         {
-            if (!mouseHeld && MouseInsideBall())
+            if (!mouseHeld && MouseInsideBall() && stationary)
             {
                 mouseHeld = true;
             }
@@ -262,6 +285,17 @@ void MouseClick(int button, int state, int, int)
 
 void physEngine(int)
 {
+	stationary = true;
+
+	for(int i{ 0 }; i < NR_BALLS; ++i)
+	{
+		phys::vec2& speed = scene.m_bodies[i]->m_speed;
+		// Not quite linear interpolation
+		float friction = std::max(0.f, std::min(1.f, (speed.x * speed.x + speed.y * speed.y) / 40.f)) * (FRICTION_MAX - FRICTION_MIN) + FRICTION_MIN;
+		speed.x *= friction;
+		speed.y *= friction;
+	}
+
 	scene.tick(1.f / TICKS_PER_SECOND, 20);
 
 	for(int i{ 0 }; i < NR_BALLS; ++i)
@@ -290,6 +324,15 @@ void physEngine(int)
 		auto center_i = scene.m_bodies[i]->getCenter();
 		Ball::centers[i].x = center_i.x;
 		Ball::centers[i].y = center_i.y;
+
+		if(std::abs(scene.m_bodies[i]->m_speed.x) + std::abs(scene.m_bodies[i]->m_speed.x) < phys::EPS * 10.f)
+		{
+			scene.m_bodies[i]->m_speed.x = scene.m_bodies[i]->m_speed.y = 0.f;
+		}
+		else
+		{
+			stationary = false;
+		}
 	}
 	Ball::UpdateVBO();
 
@@ -301,6 +344,7 @@ void GenerateLevel(int newLevel=currLevel)
 {
     currLevel = newLevel;
     Ball::LoadBalls(currLevel);
+    resetPhysBalls();
     Ball::UpdateVBO();
     glutPostRedisplay();
 }
