@@ -21,13 +21,15 @@ namespace Ball
     std::vector<bool>
         pocketed;
 
+    Point whiteBallCenter; 
+
     bool firstInit{ true };
 
-    std::vector<Point> GetCoords(const Point& center)
+    std::vector<Point> GetCoords(const Point& a_center)
     {
-        Point top{ center.x, center.y + 2 * BALL_RADIUS };
-        Point left_bottom{ center.x - SQRT3 * BALL_RADIUS, center.y - BALL_RADIUS };
-        Point right_bottom{ center.x + SQRT3 * BALL_RADIUS, center.y - BALL_RADIUS };
+        Point top{ a_center.x, a_center.y + 2 * BALL_RADIUS };
+        Point left_bottom{ a_center.x - SQRT3 * BALL_RADIUS, a_center.y - BALL_RADIUS };
+        Point right_bottom{ a_center.x + SQRT3 * BALL_RADIUS, a_center.y - BALL_RADIUS };
         return {
             top,
             left_bottom,
@@ -35,16 +37,18 @@ namespace Ball
         };
     }
 
-    void LoadBalls(int currLevel)
+    void LoadBalls(int a_currLevel)
     {
         centers.clear();
         pocketed = std::vector<bool>(NR_BALLS, false);
-        std::ifstream file(LEVELS_PATH + std::to_string(currLevel) + ".txt");
+        std::ifstream file(LEVELS_PATH + std::to_string(a_currLevel) + ".txt");
         Point center;
         while (file >> center)
         {
             centers.push_back(center);
         }
+        whiteBallCenter.x = centers[0].x;
+        whiteBallCenter.y = centers[0].y;
         file.close();
     }
 
@@ -211,17 +215,21 @@ namespace Ball
         glDeleteVertexArrays(1, &VaoId);
     }
 
-    int pot(int a_ballId)
+    // Pots the ball in a pocket. Returns the inversions caused by this or -1 if the cue ball was potted
+    int pot(int a_ballIdx)
     {
-    	pocketed[a_ballId] = true;
+    	pocketed[a_ballIdx] = true;
 
-    	if(a_ballId)
-			return -1;
-
+    	if (a_ballIdx == 0)
+        {
+            // Penalty for potting the white ball
+			return 50;
+        }
     	int inversions{ 0 };
-
-    	for(int i{ 1 }; i < a_ballId; ++i)
+    	for (int i = 1; i < a_ballIdx; ++i)
+        {
 			inversions += !pocketed[i];
+        }
 
 		return inversions;
     }

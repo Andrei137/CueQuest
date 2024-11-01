@@ -9,9 +9,16 @@ namespace Ball
     {
         float x{}, y{};
 
-        friend std::istream& operator>>(std::istream& is, Point& p)
+        Point& operator= (const Point& a_P)
         {
-            return is >> p.x >> p.y;
+            this->x = a_P.x;
+            this->y = a_P.y;
+            return *this;
+        }
+
+        friend std::istream& operator>>(std::istream& a_in, Point& a_p)
+        {
+            return a_in >> a_p.x >> a_p.y;
         }
     };
 
@@ -19,6 +26,9 @@ namespace Ball
         VaoId,
         VboId,
         EboId;
+        
+    extern Point
+        whiteBallCenter;
 
     extern std::vector<Point>
         centers;
@@ -33,6 +43,5 @@ namespace Ball
     void UpdateVBO();
     GLuint CreateShaders();
     void DestroyVBO();
-    /// Pots the ball in a pocket. Returns the inversions caused by this or -1 if the cue ball was potted
     int pot(int);
 }

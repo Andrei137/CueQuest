@@ -48,6 +48,7 @@ const GLfloat
 
 const std::string
     TITLE{ "CueQuest" },
+    ARROW_SHADER{ "arrow" },
     BALL_SHADER{ "ball" },
     TEXTURE_SHADER{ "texture" },
     LEVELS_PATH{ "resources/levels/level_" },
