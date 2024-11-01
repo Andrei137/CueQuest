@@ -320,7 +320,7 @@ void physEngine(int)
 					if(inv == -1)
 					{
 						// You potted the cue ball. Nice job
-						inversions = -1;
+						inversions = -10000;
 					}
 					else
 						inversions += inv;
@@ -394,6 +394,17 @@ void RenderFunction(void)
     glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glBindVertexArray(Ball::VaoId);
     glDrawElements(GL_TRIANGLES, NR_TRIANGLE_COORDS * TOTAL_BALLS, GL_UNSIGNED_INT, (void*)(0));
+
+    if(inversions < 0)
+	{
+		// Cue ball was potted
+		// Draw game over texture and allow the player to reset the level
+	}
+	else if(stationary && !Ball::GetCurrentBall())
+	{
+		// All balls were potted and the cue ball is fine
+		// Draw congratulations texture and allow the player to reset the level or move to the next one
+	}
 
     glutSwapBuffers();
     glFlush();
