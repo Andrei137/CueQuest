@@ -33,4 +33,6 @@ namespace Ball
     void UpdateVBO();
     GLuint CreateShaders();
     void DestroyVBO();
+    /// Pots the ball in a pocket. Returns the inversions caused by this or -1 if the cue ball was potted
+    int pot(int);
 }

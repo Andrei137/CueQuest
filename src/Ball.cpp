@@ -117,7 +117,7 @@ namespace Ball
 
         // Handle the display ball
         std::vector<Point> coords(3);
-        if (firstInit) 
+        if (firstInit)
         {
             coords = GetCoords(Point{ X_DISPLAY_BALL, Y_DISPLAY_BALL });
         }
@@ -209,5 +209,20 @@ namespace Ball
 
         glBindVertexArray(0);
         glDeleteVertexArrays(1, &VaoId);
+    }
+
+    int pot(int a_ballId)
+    {
+    	pocketed[a_ballId] = true;
+
+    	if(a_ballId)
+			return -1;
+
+    	int inversions{ 0 };
+
+    	for(int i{ 1 }; i < a_ballId; ++i)
+			inversions += !pocketed[i];
+
+		return inversions;
     }
 }

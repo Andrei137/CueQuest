@@ -44,6 +44,9 @@ phys::Circle
 bool
 	stationary;
 
+int
+	inversions;
+
 /* Initialization Section */
 void LoadTexture(const char* photoPath, GLuint& texture)
 {
@@ -82,11 +85,8 @@ void resetPhysBalls()
 		body->m_bodyData.setStatic(false, 1.f);
 		// TODO: make all vectors use the same type (most likely glm::vec2)
 		body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
-		// TODO: remove this after the corner helpers work as intended
-		body->m_speed.x = (float)(rand()%10*3);
-		body->m_speed.y = (float)(rand()%10*3);
-//		body->m_speed.x = 0.f;
-//		body->m_speed.y = 0.f;
+		body->m_speed.x = 0.f;
+		body->m_speed.y = 0.f;
 		body->m_acceleration = phys::vec2(0.f, 0.f);
 	}
 }
@@ -316,7 +316,14 @@ void physEngine(int)
 					circle->m_center.x = static_cast<float>(1e20);
 					circle->m_center.y = i * 3.f /* Anything at least equal to 2 should work. */ * BALL_RADIUS;
 
-					Ball::pocketed[i] = true;
+					int inv = Ball::pot(i);
+					if(inv == -1)
+					{
+						// You potted the cue ball. Nice job
+						inversions = -1;
+					}
+					else
+						inversions += inv;
 				}
 			}
 		}
@@ -342,6 +349,7 @@ void physEngine(int)
 
 void GenerateLevel(int newLevel=currLevel)
 {
+	inversions = 0;
     currLevel = newLevel;
     Ball::LoadBalls(currLevel);
     resetPhysBalls();
