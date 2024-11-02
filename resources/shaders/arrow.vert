@@ -12,5 +12,5 @@ void main ()
 {
     gl_Position = myMatrix * vec4(in_Position, 0.0f, 1.0f);
     ex_Color.xyz = arrowColor;
-	ex_Color.w = 1.f;
+	ex_Color.w = 1.0f;
 }

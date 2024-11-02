@@ -11,5 +11,5 @@ void main(void)
     out_Color.xyz = ex_Color;
 	// p > 0 -> opacitate 0
 	out_Color.w = float(p <= 0);
-	out_Color.xyz *= float(p < -0.3);
+	out_Color.xyz *= float(p < -0.2);
 }

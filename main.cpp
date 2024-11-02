@@ -31,6 +31,9 @@ GLuint
     TextTexture;
 glm::vec2
     mousePos;
+const static glm::vec3 
+    StationaryArrowColor{ 1.0f, 0.0f, 0.0f }, 
+    AimedArrowColor{ 0.0f, 0.25f, 0.75f };
 glm::mat4
     myMatrix,
     resizeMatrix;
@@ -266,23 +269,6 @@ void MouseClick(int a_button, int a_state, int, int)
             }
         }
     }
-    // Just for debugging
-    else if (a_button == GLUT_RIGHT_BUTTON)
-    {
-        if (a_state == GLUT_DOWN)
-        {
-            if (XMIN_BOARD < mousePos.x && mousePos.x < XMAX_BOARD &&
-                YMIN_BOARD < mousePos.y && mousePos.y < YMAX_BOARD)
-            {
-                int currBall{ Ball::GetCurrentBall() };
-                if (currBall != 0)
-                {
-                    Ball::pocketed[Ball::GetCurrentBall()] = true;
-                    Ball::UpdateVBO();
-                }
-            }
-        }
-    }
     glutPostRedisplay();
 }
 
@@ -367,8 +353,6 @@ void ProcessNormalKeys(unsigned char a_key, int, int)
 
 void RenderFunction()
 {
-	static glm::vec3 RedArrowColor{ 1.f, 0.f, 0.f }, BlueArrowColor{ 0.f, 0.5f, 1.f };
-
     glClear(GL_COLOR_BUFFER_BIT);
 
     myMatrix = resizeMatrix;
@@ -401,14 +385,11 @@ void RenderFunction()
 
         if (mouseHeld)
         {
-            // Draw the arrow
-            // TODO: handle the other points
-
             glm::vec2 ball{ Ball::centers[0].x, Ball::centers[0].y };
-            if(glm::dot(ball - mousePos, ball - mousePos) > BALL_RADIUS * BALL_RADIUS)
+            if (glm::dot(ball - mousePos, ball - mousePos) > BALL_RADIUS * BALL_RADIUS)
             {
             	glLineWidth(4.f);
-            	glUniform3fv(ArrowColorLocation, 1, &BlueArrowColor.x);
+            	glUniform3fv(ArrowColorLocation, 1, &AimedArrowColor.x);
 				glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, (void*)(0));
             }
         }
@@ -417,7 +398,7 @@ void RenderFunction()
             // Draw the red point inside the white ball
             glEnable(GL_POINT_SMOOTH);
             glPointSize(6.0f);
-            glUniform3fv(ArrowColorLocation, 1, &RedArrowColor.x);
+            glUniform3fv(ArrowColorLocation, 1, &StationaryArrowColor.x);
             glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, (void*)(0));
             glDisable(GL_POINT_SMOOTH);
         }
