@@ -29,10 +29,13 @@ const float
     YMAX_TEXT{ 340.0f },
     X_DISPLAY_BALL{ -410.0f },
     Y_DISPLAY_BALL{ 304.0f },
+    SQRT2{ static_cast<float>(sqrt(2)) },
     SQRT3{ static_cast<float>(sqrt(3)) },
     PI{ static_cast<float>(atan2(-1, 0)) },
     FRICTION_MIN{ 0.94f },
-    FRICTION_MAX{ 0.9999f };
+    FRICTION_MAX{ 0.9999f },
+    ARROW_SIDE_LENGTH{20.f},
+    MAX_STRENGTH{ 100.f };
 
 const GLuint
 	TICKS_PER_SECOND{ 30 },

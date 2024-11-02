@@ -1,4 +1,5 @@
 #pragma once
+#include "glm/glm.hpp"
 
 namespace Arrow
 {
@@ -8,7 +9,7 @@ namespace Arrow
         EboId;
 
     void CreateVBO();
-    void UpdateVBO();
+    void UpdateVBO(glm::vec2 a_cueBallPos, glm::vec2 a_mousePos);
     GLuint CreateShaders();
     void DestroyVBO();
 }
