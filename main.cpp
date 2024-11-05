@@ -45,9 +45,9 @@ int
     shots{ 0 },
     inversions;
 phys::World
-	scene;
+    scene;
 phys::Circle
-	pockets[6];
+    pockets[6];
 
 /* Initialization Section */
 void LoadTexture(const char* a_photoPath, GLuint& a_texture)
@@ -79,113 +79,116 @@ void CreateShaders()
 
 void ResetPhys()
 {
-	phys::Body* body;
+    phys::Body* body;
 
-	// The first NR_BALLS elements from the physics engine must be the balls, in the correct order
-	for (int i = 0; i < NR_BALLS; ++i)
-	{
-		body = scene.m_bodies[i];
-		body->m_bodyData.setStatic(false, 1.f);
-		// TODO: make all vectors use the same type (most likely glm::vec2)
-		body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
-		body->m_speed.x = body->m_speed.y = 0.f;
-		body->m_acceleration = phys::vec2(0.f, 0.f);
-	}
+    // The first NR_BALLS elements from the physics engine must be the balls, in the correct order
+    for (int i = 0; i < NR_BALLS; ++i)
+    {
+        body = scene.m_bodies[i];
+        body->m_bodyData.setStatic(false, 1.f);
+        // TODO: make all vectors use the same type (most likely glm::vec2)
+        body->setShape(phys::Circle(phys::vec2(Ball::centers[i].x, Ball::centers[i].y), BALL_RADIUS));
+        body->m_speed.x = body->m_speed.y = 0.f;
+        body->m_acceleration = phys::vec2(0.f, 0.f);
+    }
 }
 
 void InitPhys()
 {
-	// We do not allow shots to be taken in the first frame.
-	stationary = false;
+    // We do not allow shots to be taken in the first frame.
+    stationary = false;
 
-	// Pockets are stored separately so they don't interfere with collision checks and just exist
-	int k{ 0 };
-	for (float x : { XMIN_BOARD + 40.f, 0.f, XMAX_BOARD - 40.f })
-		for (float y : { YMIN_BOARD + 38.f, YMAX_BOARD - 38.f })
-		{
-			pockets[k].m_center.x = x;
-			pockets[k].m_center.y = y;
-			pockets[k].setRadius(30.f);
-			++k;
-		}
-
-	// Making the bodies for the balls
-	for (k = 0; k < NR_BALLS; ++k)
+    // Pockets are stored separately so they don't interfere with collision checks and just exist
+    int k{ 0 };
+    for (float x : { XMIN_BOARD + 40.f, 0.f, XMAX_BOARD - 40.f })
     {
-		scene.makeBody();
+        for (float y : { YMIN_BOARD + 38.f, YMAX_BOARD - 38.f })
+        {
+            pockets[k].m_center.x = x;
+            pockets[k].m_center.y = y;
+            pockets[k].setRadius(30.f);
+            ++k;
+        }
     }
-	// Setting the balls' positions
-	ResetPhys();
 
-	phys::Body* body;
+    // Making the bodies for the balls
+    for (k = 0; k < NR_BALLS; ++k)
+    {
+        scene.makeBody();
+    }
 
-	// Left
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2(XMIN_BOARD, 0.f), phys::vec2(55.f, YMAX_BOARD - 110)));
+    // Setting the balls' positions
+    ResetPhys();
 
-	// Right
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2(XMAX_BOARD, 0.f), phys::vec2(55.f, YMAX_BOARD - 110)));
+    phys::Body* body;
 
-	// Top left
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2(-210.f, YMIN_BOARD), phys::vec2(172.5f, 60.f)));
+    // Left
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2(XMIN_BOARD, 0.f), phys::vec2(55.f, YMAX_BOARD - 110)));
 
-	// Top right
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2( 210.f, YMIN_BOARD), phys::vec2(172.5f, 60.f)));
+    // Right
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2(XMAX_BOARD, 0.f), phys::vec2(55.f, YMAX_BOARD - 110)));
 
-	// Bottom left
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2(-210.f, YMAX_BOARD), phys::vec2(172.5f, 60.f)));
+    // Top left
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2(-210.f, YMIN_BOARD), phys::vec2(172.5f, 60.f)));
 
-	// Bottom right
-	body = scene.makeBody();
-	body->setShape(phys::AxisParalelRectangle(phys::vec2( 210.f, YMAX_BOARD), phys::vec2(172.5f, 60.f)));
+    // Top right
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2( 210.f, YMIN_BOARD), phys::vec2(172.5f, 60.f)));
 
-	// Pockets helpers
-	// TODO: Fix these so the collisions are better
-	// Top right
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(453.5f, 166.5f), phys::vec2(25.f, 25.f), PI / 3.f));
+    // Bottom left
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2(-210.f, YMAX_BOARD), phys::vec2(172.5f, 60.f)));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(384.f, 243.5f), phys::vec2(25.f, 25.f), -2.f * PI / 9.f));
+    // Bottom right
+    body = scene.makeBody();
+    body->setShape(phys::AxisParalelRectangle(phys::vec2( 210.f, YMAX_BOARD), phys::vec2(172.5f, 60.f)));
 
-	// Bottom right
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(453.5f, -166.5f), phys::vec2(25.f, 25.f), -PI / 3.f));
+    // Pockets helpers
+    // TODO: Fix these so the collisions are better
+    // Top right
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(453.5f, 166.5f), phys::vec2(25.f, 25.f), PI / 3.f));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(384.f, -243.5f), phys::vec2(25.f, 25.f), 2.f * PI / 9.f));
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(384.f, 243.5f), phys::vec2(25.f, 25.f), -2.f * PI / 9.f));
 
-	// Top left
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-453.5f, 166.5f), phys::vec2(25.f, 25.f), 2.f * PI / 3.f));
+    // Bottom right
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(453.5f, -166.5f), phys::vec2(25.f, 25.f), -PI / 3.f));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-384.f, 243.5f), phys::vec2(25.f, 25.f), 11.f * PI / 9.f));
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(384.f, -243.5f), phys::vec2(25.f, 25.f), 2.f * PI / 9.f));
 
-	// Bottom left
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-453.5f, -166.5f), phys::vec2(25.f, 25.f), 4.f * PI / 3.f));
+    // Top left
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-453.5f, 166.5f), phys::vec2(25.f, 25.f), 2.f * PI / 3.f));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-384.f, -243.5f), phys::vec2(25.f, 25.f), 7.f * PI / 9.f));
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-384.f, 243.5f), phys::vec2(25.f, 25.f), 11.f * PI / 9.f));
 
-	// Top middle
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(41.5f, 225.f), phys::vec2(12.5f, 12.5f), 23.f * PI / 180.f));
+    // Bottom left
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-453.5f, -166.5f), phys::vec2(25.f, 25.f), 4.f * PI / 3.f));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-41.5f, 225.f), phys::vec2(12.5f, 12.5f), 157.f * PI / 180.f));
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-384.f, -243.5f), phys::vec2(25.f, 25.f), 7.f * PI / 9.f));
 
-	// Bottom middle
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(41.5f, -225.f), phys::vec2(12.5f, 12.5f), -23.f * PI / 180.f));
+    // Top middle
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(41.5f, 225.f), phys::vec2(12.5f, 12.5f), 23.f * PI / 180.f));
 
-	body = scene.makeBody();
-	body->setShape(phys::RotatibleRectangle(phys::vec2(-41.5f, -225.f), phys::vec2(12.5f, 12.5f), 203.f * PI / 180.f));
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-41.5f, 225.f), phys::vec2(12.5f, 12.5f), 157.f * PI / 180.f));
+
+    // Bottom middle
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(41.5f, -225.f), phys::vec2(12.5f, 12.5f), -23.f * PI / 180.f));
+
+    body = scene.makeBody();
+    body->setShape(phys::RotatibleRectangle(phys::vec2(-41.5f, -225.f), phys::vec2(12.5f, 12.5f), 203.f * PI / 180.f));
 }
 
 void Initialize()
@@ -231,10 +234,10 @@ bool MouseInsideBall()
 void HandleShoot()
 {
     ++shots;
-	phys::vec2 ballCenter{ static_cast<phys::Circle*>(scene.m_bodies[0]->getShape())->m_center },
-	           mouse{ phys::vec2(mousePos.x, mousePos.y) };
+    phys::vec2 ballCenter{ static_cast<phys::Circle*>(scene.m_bodies[0]->getShape())->m_center },
+               mouse{ phys::vec2(mousePos.x, mousePos.y) };
 
-	float len{ static_cast<float>(sqrt(phys::dotProduct(mouse - ballCenter, mouse - ballCenter))) },
+    float len{ static_cast<float>(sqrt(phys::dotProduct(mouse - ballCenter, mouse - ballCenter))) },
           strength{ std::min(len - BALL_RADIUS, 200.f) * 0.25f };
 
     scene.m_bodies[0]->m_speed.x -= (mouse.x - ballCenter.x) / len * strength;
@@ -274,64 +277,64 @@ void MouseClick(int a_button, int a_state, int, int)
 
 void PhysEngine(int)
 {
-	stationary = true;
+    stationary = true;
 
-	for (int i = 0; i < NR_BALLS; ++i)
-	{
-		phys::vec2& speed{ scene.m_bodies[i]->m_speed };
-		// Not quite linear interpolation
-		float friction{ std::max(0.f, std::min(1.f, (speed.x * speed.x + speed.y * speed.y) / 40.f)) * (FRICTION_MAX - FRICTION_MIN) + FRICTION_MIN };
-		speed.x *= friction;
-		speed.y *= friction;
-	}
+    for (int i = 0; i < NR_BALLS; ++i)
+    {
+        phys::vec2& speed{ scene.m_bodies[i]->m_speed };
+        // Not quite linear interpolation
+        float friction{ std::max(0.f, std::min(1.f, (speed.x * speed.x + speed.y * speed.y) / 40.f)) * (FRICTION_MAX - FRICTION_MIN) + FRICTION_MIN };
+        speed.x *= friction;
+        speed.y *= friction;
+    }
 
-	scene.tick(1.f / TICKS_PER_SECOND, 20);
+    scene.tick(1.f / TICKS_PER_SECOND, 20);
 
-	for (int i = 0; i < NR_BALLS; ++i)
-	{
-		if (!Ball::pocketed[i])
-		{
-			phys::Shape* shape{ scene.m_bodies[i]->getShape() };
-			assert(shape->m_shapeType == phys::SH_CIRCLE);
-			phys::Circle* circle{ static_cast<phys::Circle*>(shape) };
+    for (int i = 0; i < NR_BALLS; ++i)
+    {
+        if (!Ball::pocketed[i])
+        {
+            phys::Shape* shape{ scene.m_bodies[i]->getShape() };
+            assert(shape->m_shapeType == phys::SH_CIRCLE);
+            phys::Circle* circle{ static_cast<phys::Circle*>(shape) };
 
-			for (int j = 0; j < 6; ++j)
-			{
-				if (phys::collision::checkCollision(circle, pockets + j))
-				{
-					// Ball i got potted. Remove it from physics world by moving it to a coordinate outside the screen.
-					// We do this so that it will not affect calculations
-					scene.m_bodies[i]->m_speed = scene.m_bodies[i]->m_acceleration = phys::vec2(0.f, 0.f);
-					circle->m_center.x = static_cast<float>(1e20);
-					circle->m_center.y = i * 3.f /* Anything at least equal to 2 should work. */ * BALL_RADIUS;
+            for (int j = 0; j < 6; ++j)
+            {
+                if (phys::collision::checkCollision(circle, pockets + j))
+                {
+                    // Ball i got potted. Remove it from physics world by moving it to a coordinate outside the screen.
+                    // We do this so that it will not affect calculations
+                    scene.m_bodies[i]->m_speed = scene.m_bodies[i]->m_acceleration = phys::vec2(0.f, 0.f);
+                    circle->m_center.x = static_cast<float>(1e20);
+                    circle->m_center.y = i * 3.f /* Anything at least equal to 2 should work. */ * BALL_RADIUS;
 
-					inversions += Ball::pot(i);
-				}
-			}
-		}
+                    inversions += Ball::pot(i);
+                }
+            }
+        }
 
-		auto center_i{ scene.m_bodies[i]->getCenter() };
-		Ball::centers[i].x = center_i.x;
-		Ball::centers[i].y = center_i.y;
+        auto center_i{ scene.m_bodies[i]->getCenter() };
+        Ball::centers[i].x = center_i.x;
+        Ball::centers[i].y = center_i.y;
 
-		if (std::abs(scene.m_bodies[i]->m_speed.x) + std::abs(scene.m_bodies[i]->m_speed.x) < 0.01f)
-		{
-			scene.m_bodies[i]->m_speed.x = scene.m_bodies[i]->m_speed.y = 0.f;
-		}
-		else
-		{
-			stationary = false;
-		}
-	}
-	Ball::UpdateVBO();
+        if (std::abs(scene.m_bodies[i]->m_speed.x) + std::abs(scene.m_bodies[i]->m_speed.x) < 0.01f)
+        {
+            scene.m_bodies[i]->m_speed.x = scene.m_bodies[i]->m_speed.y = 0.f;
+        }
+        else
+        {
+            stationary = false;
+        }
+    }
+    Ball::UpdateVBO();
 
-	glutPostRedisplay();
-	glutTimerFunc(MSPERTICK, PhysEngine, 0);
+    glutPostRedisplay();
+    glutTimerFunc(MSPERTICK, PhysEngine, 0);
 }
 
 void GenerateLevel(int a_newLevel = currLevel)
 {
-	inversions = shots = 0;
+    inversions = shots = 0;
     currLevel = a_newLevel;
     Ball::LoadBalls(currLevel);
     ResetPhys();
@@ -378,19 +381,19 @@ void RenderFunction()
 
     if (stationary)
     {
-    	Arrow::UpdateVBO(glm::vec2(Ball::centers[0].x, Ball::centers[0].y), mousePos);
-		glUseProgram(ArrowProgramId);
-		glUniformMatrix4fv(ArrowMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-		glBindVertexArray(Arrow::VaoId);
+        Arrow::UpdateVBO(glm::vec2(Ball::centers[0].x, Ball::centers[0].y), mousePos);
+        glUseProgram(ArrowProgramId);
+        glUniformMatrix4fv(ArrowMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+        glBindVertexArray(Arrow::VaoId);
 
         if (mouseHeld)
         {
             glm::vec2 ball{ Ball::centers[0].x, Ball::centers[0].y };
             if (glm::dot(ball - mousePos, ball - mousePos) > BALL_RADIUS * BALL_RADIUS)
             {
-            	glLineWidth(4.f);
-            	glUniform3fv(ArrowColorLocation, 1, &AimedArrowColor.x);
-				glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, (void*)(0));
+                glLineWidth(4.f);
+                glUniform3fv(ArrowColorLocation, 1, &AimedArrowColor.x);
+                glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, (void*)(0));
             }
         }
         else
@@ -411,13 +414,13 @@ void RenderFunction()
             GenerateLevel(currLevel % NR_LEVELS + 1);
         }
         else if (Ball::pocketed[0])
-    	{
-    		// Cue ball was potted
-    		// Draw game over texture and allow the player to reset the level
+        {
+            // Cue ball was potted
+            // Draw game over texture and allow the player to reset the level
             Ball::centers[0] = Ball::whiteBallCenter;
             Ball::pocketed[0] = false;
             ResetPhys();
-    	}
+        }
     }
 
     glutSwapBuffers();
