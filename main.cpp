@@ -360,6 +360,8 @@ void RenderFunction()
 
     myMatrix = resizeMatrix;
 
+    bool onlyWhite{ Ball::GetCurrentBall() == 0 };
+
     // Draw the board
     glUseProgram(TextureProgramId);
     glUniformMatrix4fv(TextureMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
@@ -370,14 +372,18 @@ void RenderFunction()
     glDrawElements(GL_POLYGON, CORNERS, GL_UNSIGNED_INT, (void*)(0));
 
     // Draw the text
-    glBindTexture(GL_TEXTURE_2D, TextTexture);
-    glDrawElements(GL_POLYGON, CORNERS, GL_UNSIGNED_INT, (void*)(4 * sizeof(GLuint)));
+    if (!onlyWhite)
+    {
+        glBindTexture(GL_TEXTURE_2D, TextTexture);
+        glDrawElements(GL_POLYGON, CORNERS, GL_UNSIGNED_INT, (void*)(4 * sizeof(GLuint)));
+    }
 
     // Draw the balls
     glUseProgram(BallProgramId);
     glUniformMatrix4fv(BallMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
     glBindVertexArray(Ball::VaoId);
-    glDrawElements(GL_TRIANGLES, NR_TRIANGLE_COORDS * TOTAL_BALLS, GL_UNSIGNED_INT, (void*)(0));
+    // The last ball is the displayed pne, we don't want it to show up if only the white ball remains
+    glDrawElements(GL_TRIANGLES, NR_TRIANGLE_COORDS * (TOTAL_BALLS - onlyWhite), GL_UNSIGNED_INT, (void*)(0));
 
     if (stationary)
     {
