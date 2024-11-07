@@ -218,19 +218,19 @@ namespace Ball
     // Pots the ball in a pocket. Returns the inversions caused by this or -1 if the cue ball was potted
     int pot(int a_ballIdx)
     {
-    	pocketed[a_ballIdx] = true;
+        pocketed[a_ballIdx] = true;
 
-    	if (a_ballIdx == 0)
+        if (a_ballIdx == 0)
         {
             // Penalty for potting the white ball
-			return 50;
+            return 50;
         }
-    	int inversions{ 0 };
-    	for (int i = 1; i < a_ballIdx; ++i)
+        int inversions{ 0 };
+        for (int i = 1; i < a_ballIdx; ++i)
         {
-			inversions += !pocketed[i];
+            inversions += !pocketed[i];
         }
 
-		return inversions;
+        return inversions;
     }
 }

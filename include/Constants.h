@@ -38,8 +38,8 @@ const float
     MAX_STRENGTH{ 100.f };
 
 const GLuint
-	TICKS_PER_SECOND{ 30 },
-	MSPERTICK{ 1000 / TICKS_PER_SECOND };
+    TICKS_PER_SECOND{ 30 },
+    MSPERTICK{ 1000 / TICKS_PER_SECOND };
 
 const GLint
     POSX{ 350 },
